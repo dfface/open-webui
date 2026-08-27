@@ -1,17 +1,19 @@
 <script lang="ts">
 	import { createEventDispatcher } from 'svelte';
 
-	import { safeSourceUrl, visibleMatches } from '$lib/mailuo/view-model';
-	import type { MailuoObjectResult } from '$lib/mailuo/types';
+	import { highlightMailuoText, safeSourceUrl, visibleMatches } from '$lib/mailuo/view-model';
+	import type { MailuoObjectResult, MailuoSearchMode } from '$lib/mailuo/types';
 
 	export let result: MailuoObjectResult;
 	export let sourceName: string;
+	export let query = '';
+	export let mode: MailuoSearchMode = 'hybrid';
 	export let expanded = false;
 
 	const dispatch = createEventDispatcher<{ toggle: void }>();
 
 	$: sourceUrl = safeSourceUrl(result.source_url);
-	$: matches = visibleMatches(result, expanded);
+	$: matches = visibleMatches(result, expanded, query, mode);
 
 	const formatDate = (value: string) => {
 		const date = new Date(value);
@@ -23,12 +25,6 @@
 		}).format(date);
 	};
 
-	const normalizeContent = (content: string) =>
-		content
-			.replace(/\\r\\n|\\n|\\r/g, '\n')
-			.replace(/\n{3,}/g, '\n\n')
-			.trim();
-
 	$: updatedAt = formatDate(result.source_updated_at);
 
 	const channelLabels: Record<string, string> = {
@@ -38,11 +34,9 @@
 	};
 </script>
 
-<article
-	class="group rounded-2xl border border-gray-200 bg-white p-4 transition-colors hover:border-gray-300 dark:border-gray-800 dark:bg-gray-900 dark:hover:border-gray-700 sm:p-5"
->
-	<div class="flex items-start justify-between gap-4">
-		<div class="min-w-0">
+<article class="group p-4 transition-colors hover:bg-gray-50/70 dark:hover:bg-gray-800/30 sm:p-5">
+	<div class="flex items-start gap-3">
+		<div class="min-w-0 flex-1">
 			<h2 class="line-clamp-2 text-base font-semibold leading-6 text-gray-900 dark:text-gray-100">
 				{#if sourceUrl}
 					<a
@@ -51,7 +45,13 @@
 						rel="noopener noreferrer"
 						class="rounded-sm outline-none transition-colors hover:text-gray-600 hover:underline focus-visible:ring-2 focus-visible:ring-gray-500 dark:hover:text-white"
 					>
-						{result.title || '无标题'}
+						{#each highlightMailuoText(result.title || '无标题', query) as segment}
+							{#if segment.highlighted}
+								<mark class="rounded-sm bg-amber-200 px-0.5 text-inherit dark:bg-amber-500/35"
+									>{segment.text}</mark
+								>
+							{:else}{segment.text}{/if}
+						{/each}
 					</a>
 				{:else}
 					{result.title || '无标题'}
@@ -76,10 +76,10 @@
 				href={sourceUrl}
 				target="_blank"
 				rel="noopener noreferrer"
-				class="flex min-h-[44px] shrink-0 cursor-pointer items-center gap-1.5 rounded-xl border border-gray-200 px-3 text-xs font-medium text-gray-700 transition-colors hover:border-gray-300 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-500 focus-visible:ring-offset-2 dark:border-gray-700 dark:text-gray-200 dark:hover:border-gray-600 dark:hover:bg-gray-800 dark:focus-visible:ring-offset-gray-900"
+				class="flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-xl text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-500 focus-visible:ring-offset-2 dark:text-gray-500 dark:hover:bg-gray-800 dark:hover:text-gray-100 dark:focus-visible:ring-offset-gray-900"
 				aria-label={`打开原文：${result.title || '无标题'}`}
+				title="打开原文"
 			>
-				<span class="hidden sm:inline">打开原文</span>
 				<svg
 					class="size-4"
 					viewBox="0 0 24 24"
@@ -95,15 +95,19 @@
 		{/if}
 	</div>
 
-	<div class="mt-4 space-y-3">
+	<div class="mt-3 max-w-3xl space-y-3">
 		{#each matches as match, index}
 			<div class={index > 0 ? 'border-t border-gray-100 pt-3 dark:border-gray-800' : ''}>
 				<p
-					class="whitespace-pre-wrap break-words text-sm leading-6 text-gray-700 dark:text-gray-300 {expanded
-						? ''
-						: 'line-clamp-4'}"
+					class="whitespace-pre-wrap break-words text-sm leading-6 text-gray-700 dark:text-gray-300"
 				>
-					{normalizeContent(match.content)}
+					{#each highlightMailuoText(match.content, query) as segment}
+						{#if segment.highlighted}
+							<mark class="rounded-sm bg-amber-200 px-0.5 text-inherit dark:bg-amber-500/35"
+								>{segment.text}</mark
+							>
+						{:else}{segment.text}{/if}
+					{/each}
 				</p>
 			</div>
 		{/each}

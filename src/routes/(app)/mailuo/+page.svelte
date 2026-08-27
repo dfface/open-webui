@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onDestroy, onMount } from 'svelte';
+	import { showSidebar } from '$lib/stores';
 
 	import SearchBar from '$lib/components/mailuo/SearchBar.svelte';
 	import SearchFilters from '$lib/components/mailuo/SearchFilters.svelte';
@@ -24,6 +25,8 @@
 	let knowledges: MailuoKnowledge[] = [];
 	let facets: MailuoSourceFacet[] = [];
 	let results: MailuoObjectResult[] = [];
+	let resultQuery = '';
+	let resultMode: MailuoSearchMode = 'hybrid';
 	let loading = false;
 	let initial = true;
 	let error = '';
@@ -68,6 +71,8 @@
 				limit: 20
 			});
 			results = resultsForState(results, response.results, false);
+			resultQuery = query;
+			resultMode = response.executed_mode;
 			degraded = response.degraded;
 			warnings = response.warnings;
 			initial = false;
@@ -136,7 +141,11 @@
 	<title>脉络</title>
 </svelte:head>
 
-<div class="h-full overflow-y-auto">
+<div
+	class="h-full w-full min-w-0 max-w-full overflow-y-auto {$showSidebar
+		? 'md:max-w-[calc(100%-var(--sidebar-width))]'
+		: ''}"
+>
 	<main class="mx-auto w-full max-w-5xl px-4 pb-12 pt-6 sm:px-6 sm:pt-8 lg:px-8">
 		<header class="mb-6 flex items-start justify-between gap-6">
 			<div>
@@ -191,17 +200,23 @@
 						{results.length} 条结果
 					</h2>
 					<div class="text-xs text-gray-400" aria-live="polite">
-						{mode === 'hybrid' ? '混合检索' : mode === 'keyword' ? '关键词检索' : '语义检索'}
+						{resultMode === 'hybrid'
+							? '混合检索'
+							: resultMode === 'keyword'
+								? '关键词检索'
+								: '语义检索'}
 					</div>
 				</div>
 				<div
-					class="space-y-3 transition-opacity duration-200 motion-reduce:transition-none {loading
+					class="divide-y divide-gray-100 overflow-hidden rounded-2xl border border-gray-200 bg-white transition-opacity duration-200 motion-reduce:transition-none dark:divide-gray-800 dark:border-gray-800 dark:bg-gray-900 {loading
 						? 'opacity-60'
 						: ''}"
 				>
 					{#each results as result (result.source + ':' + result.source_object_id)}
 						<SearchResult
 							{result}
+							query={resultQuery}
+							mode={resultMode}
 							sourceName={sourceLabel(result.source, sourceLabels)}
 							expanded={expandedResults.has(`${result.source}:${result.source_object_id}`)}
 							on:toggle={() => toggleExpanded(result)}
