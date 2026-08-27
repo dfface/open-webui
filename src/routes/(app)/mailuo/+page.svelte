@@ -137,13 +137,24 @@
 </svelte:head>
 
 <div class="h-full overflow-y-auto">
-	<main class="mx-auto w-full max-w-4xl px-4 py-8 sm:px-6">
-		<header class="mb-5">
-			<div class="text-xs font-medium tracking-[0.18em] text-gray-400">MAILUO</div>
-			<h1 class="mt-1 text-2xl font-semibold text-gray-900 dark:text-gray-100">脉络</h1>
-			<p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
-				在你有权访问的知识库中进行关键词、语义和混合检索。
-			</p>
+	<main class="mx-auto w-full max-w-5xl px-4 pb-12 pt-6 sm:px-6 sm:pt-8 lg:px-8">
+		<header class="mb-6 flex items-start justify-between gap-6">
+			<div>
+				<h1 class="text-2xl font-semibold tracking-tight text-gray-900 dark:text-gray-100">脉络</h1>
+				<p class="mt-1.5 max-w-2xl text-sm leading-6 text-gray-500 dark:text-gray-400">
+					搜索分散在不同系统里的文档、评论、备忘和任务。
+				</p>
+			</div>
+			<div
+				class="hidden items-center gap-1.5 pt-1 text-xs text-gray-400 md:flex"
+				aria-hidden="true"
+			>
+				<kbd
+					class="rounded-md border border-gray-200 bg-gray-50 px-2 py-1 font-sans dark:border-gray-800 dark:bg-gray-900"
+					>/</kbd
+				>
+				<span>聚焦搜索</span>
+			</div>
 		</header>
 
 		<SearchBar
@@ -161,7 +172,7 @@
 			on:knowledgeChange={loadFacets}
 		/>
 
-		<section class="mt-5" aria-live="polite">
+		<section class="mt-6" aria-label="搜索结果" aria-busy={loading}>
 			<SearchStates
 				{initial}
 				{loading}
@@ -172,10 +183,22 @@
 			/>
 
 			{#if results.length > 0}
-				<div class="mb-3 text-xs text-gray-500 dark:text-gray-400">
-					找到 {results.length} 个对象
+				<div class="mb-3 flex items-center justify-between gap-3 px-1">
+					<h2
+						id="mailuo-results-heading"
+						class="text-sm font-medium text-gray-700 dark:text-gray-200"
+					>
+						{results.length} 条结果
+					</h2>
+					<div class="text-xs text-gray-400" aria-live="polite">
+						{mode === 'hybrid' ? '混合检索' : mode === 'keyword' ? '关键词检索' : '语义检索'}
+					</div>
 				</div>
-				<div class="space-y-3">
+				<div
+					class="space-y-3 transition-opacity duration-200 motion-reduce:transition-none {loading
+						? 'opacity-60'
+						: ''}"
+				>
 					{#each results as result (result.source + ':' + result.source_object_id)}
 						<SearchResult
 							{result}
