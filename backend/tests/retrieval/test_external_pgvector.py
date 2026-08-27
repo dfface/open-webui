@@ -4,8 +4,8 @@ import types
 from pathlib import Path
 from types import SimpleNamespace
 
-import pytest
 import psycopg
+import pytest
 from pgvector import Vector
 
 

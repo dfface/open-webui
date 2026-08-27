@@ -75,8 +75,8 @@ async def get_mailuo_knowledges(
 
 @router.post('/facets', response_model=MailuoFacetResponse)
 async def get_mailuo_facets(
+    request: Request,
     form: MailuoFacetRequest,
-    request: Request = None,
     user=Depends(get_verified_user),
     db=Depends(get_async_session),
 ):

@@ -1,8 +1,7 @@
-from datetime import datetime, timezone
+import datetime as dt
 from types import SimpleNamespace
 
 import pytest
-
 from open_webui.mailuo.errors import MailuoDatabaseError, MailuoEmbeddingError, MailuoSearchError
 from open_webui.mailuo.knowledge import ResolvedKnowledge
 from open_webui.mailuo.schemas import MailuoChunkMatch, MailuoSearchRequest, SearchMode, SourceFacet
@@ -18,7 +17,7 @@ def match(knowledge_id, object_id, score):
         title=object_id,
         content=f'content {object_id}',
         source_url=f'https://example.test/{object_id}',
-        source_updated_at=datetime(2026, 8, 27, tzinfo=timezone.utc),
+        source_updated_at=dt.datetime(2026, 8, 27, tzinfo=dt.UTC),
         metadata={},
         score=score,
         matched_by=['semantic'],

@@ -6,11 +6,10 @@ from types import SimpleNamespace
 
 import pytest
 from fastapi import HTTPException
-
 from open_webui.mailuo.errors import MailuoDatabaseError, MailuoForbiddenError
 from open_webui.mailuo.schemas import (
-    MailuoFacetResponse,
     MailuoFacetRequest,
+    MailuoFacetResponse,
     MailuoKnowledge,
     MailuoSearchRequest,
     MailuoSearchResponse,
@@ -34,10 +33,7 @@ def load_router_module():
 
     auth.get_verified_user = get_verified_user
 
-    previous = {
-        name: sys.modules.get(name)
-        for name in ('open_webui.internal.db', 'open_webui.utils.auth')
-    }
+    previous = {name: sys.modules.get(name) for name in ('open_webui.internal.db', 'open_webui.utils.auth')}
     sys.modules['open_webui.internal.db'] = internal_db
     sys.modules['open_webui.utils.auth'] = auth
 
@@ -71,9 +67,7 @@ class FakeService:
     async def facets(self, knowledge_ids, user, db=None):
         if self.error:
             raise self.error
-        return MailuoFacetResponse(
-            sources=[SourceFacet(source='future', display_name='future', object_count=1)]
-        )
+        return MailuoFacetResponse(sources=[SourceFacet(source='future', display_name='future', object_count=1)])
 
 
 @pytest.mark.asyncio
@@ -83,15 +77,14 @@ async def test_router_exposes_knowledge_facets_and_search_contract(monkeypatch):
     monkeypatch.setattr(
         module,
         'list_accessible_mailuo_knowledges',
-        lambda *_args, **_kwargs: async_value(
-            [MailuoKnowledge(id='kb-1', name='脉络', description='')]
-        ),
+        lambda *_args, **_kwargs: async_value([MailuoKnowledge(id='kb-1', name='脉络', description='')]),
     )
     user = SimpleNamespace(id='user-1', role='user')
     request = SimpleNamespace(headers={})
 
     knowledges = await module.get_mailuo_knowledges(user=user, db=None)
     facets = await module.get_mailuo_facets(
+        request,
         MailuoFacetRequest(knowledge_ids=['kb-1']),
         user=user,
         db=None,

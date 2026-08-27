@@ -1,11 +1,10 @@
-from datetime import datetime, timezone
+import datetime as dt
 
 import pytest
-from pgvector import Vector
-
 from open_webui.mailuo.errors import MailuoDatabaseError
 from open_webui.mailuo.postgres import MailuoPostgresGateway
 from open_webui.mailuo.schemas import SearchMode
+from pgvector import Vector
 
 
 class FakeCursor:
@@ -51,7 +50,7 @@ async def test_search_calls_fixed_database_function_with_vector_parameter():
                 'title': 'Memo',
                 'content': 'Body',
                 'source_url': 'https://memos.example/m/1',
-                'source_updated_at': datetime(2026, 8, 27, tzinfo=timezone.utc),
+                'source_updated_at': dt.datetime(2026, 8, 27, tzinfo=dt.UTC),
                 'metadata': {},
                 'score': 0.5,
                 'matched_by': ['semantic'],

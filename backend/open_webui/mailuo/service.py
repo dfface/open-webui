@@ -91,7 +91,8 @@ class MailuoSearchService:
 
         results = aggregate_chunk_matches(rows, limit=form.limit, snippets_per_object=3)
         log.info(
-            'mailuo_search requested_mode=%s executed_mode=%s degraded=%s knowledge_count=%s result_count=%s latency_ms=%s',
+            'mailuo_search requested_mode=%s executed_mode=%s degraded=%s '
+            'knowledge_count=%s result_count=%s latency_ms=%s',
             form.mode.value,
             executed_mode.value,
             degraded,

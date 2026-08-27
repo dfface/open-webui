@@ -1,7 +1,6 @@
 from types import SimpleNamespace
 
 import pytest
-
 from open_webui.mailuo.errors import MailuoConfigurationError, MailuoForbiddenError
 from open_webui.mailuo.knowledge import list_accessible_mailuo_knowledges, resolve_mailuo_knowledges
 

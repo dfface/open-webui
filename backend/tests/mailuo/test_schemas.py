@@ -1,7 +1,6 @@
 import pytest
-from pydantic import ValidationError
-
 from open_webui.mailuo.schemas import MailuoSearchRequest, SearchMode
+from pydantic import ValidationError
 
 
 def test_search_request_defaults_to_hybrid_and_normalizes_filters():

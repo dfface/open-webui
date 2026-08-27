@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+import datetime as dt
 
 from open_webui.mailuo.ranking import aggregate_chunk_matches
 from open_webui.mailuo.schemas import MailuoChunkMatch
@@ -21,7 +21,7 @@ def row(
         title=f'Title {object_id}',
         content=content or f'Content {object_id}-{chunk_no}',
         source_url=f'https://example.test/{source}/{object_id}',
-        source_updated_at=datetime.fromisoformat(updated_at).replace(tzinfo=timezone.utc),
+        source_updated_at=dt.datetime.fromisoformat(updated_at).replace(tzinfo=dt.UTC),
         metadata={},
         score=score,
         matched_by=matched_by,

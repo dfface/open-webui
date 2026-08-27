@@ -1,11 +1,11 @@
-from datetime import datetime
-from enum import Enum
+import datetime as dt
+import enum
 from typing import Any
 
 from pydantic import BaseModel, Field, field_validator
 
 
-class SearchMode(str, Enum):
+class SearchMode(enum.StrEnum):
     HYBRID = 'hybrid'
     KEYWORD = 'keyword'
     SEMANTIC = 'semantic'
@@ -68,7 +68,7 @@ class MailuoChunkMatch(BaseModel):
     title: str
     content: str
     source_url: str
-    source_updated_at: datetime
+    source_updated_at: dt.datetime
     metadata: dict[str, Any] = Field(default_factory=dict)
     score: float
     matched_by: list[str] = Field(default_factory=list)
@@ -86,7 +86,7 @@ class MailuoObjectResult(BaseModel):
     source_object_id: str
     title: str
     source_url: str
-    source_updated_at: datetime
+    source_updated_at: dt.datetime
     metadata: dict[str, Any] = Field(default_factory=dict)
     matched_by: list[str]
     matches: list[MailuoSnippet]

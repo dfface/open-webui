@@ -10,7 +10,6 @@ from psycopg.rows import dict_row
 from open_webui.mailuo.errors import MailuoDatabaseError
 from open_webui.mailuo.schemas import MailuoChunkMatch, SearchMode, SourceFacet
 
-
 SEARCH_SQL = 'SELECT * FROM public.mailuo_hybrid_search(%s, %s, %s, %s, %s, %s)'
 FACETS_SQL = 'SELECT * FROM public.mailuo_source_facets()'
 

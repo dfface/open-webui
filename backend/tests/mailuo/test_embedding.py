@@ -2,7 +2,6 @@ import asyncio
 from types import SimpleNamespace
 
 import pytest
-
 from open_webui.mailuo.embedding import generate_query_embedding
 from open_webui.mailuo.errors import MailuoEmbeddingError
 
@@ -49,9 +48,7 @@ async def test_query_embeddings_are_serialized_by_redis_lock():
         return [float(len(query))]
 
     request = SimpleNamespace(
-        app=SimpleNamespace(
-            state=SimpleNamespace(redis=redis, EMBEDDING_FUNCTION=embedding_function)
-        )
+        app=SimpleNamespace(state=SimpleNamespace(redis=redis, EMBEDDING_FUNCTION=embedding_function))
     )
     user = SimpleNamespace(id='user-1')
 
@@ -75,9 +72,7 @@ async def test_embedding_failure_is_wrapped_without_original_secret():
         raise RuntimeError('Bearer secret-token')
 
     request = SimpleNamespace(
-        app=SimpleNamespace(
-            state=SimpleNamespace(redis=None, EMBEDDING_FUNCTION=embedding_function)
-        )
+        app=SimpleNamespace(state=SimpleNamespace(redis=None, EMBEDDING_FUNCTION=embedding_function))
     )
 
     with pytest.raises(MailuoEmbeddingError) as exc_info:
