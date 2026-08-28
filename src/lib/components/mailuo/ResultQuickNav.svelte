@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { createEventDispatcher } from 'svelte';
+	import { createEventDispatcher, tick } from 'svelte';
 
 	import type { MailuoObjectResult } from '$lib/mailuo/types';
 
@@ -10,8 +10,29 @@
 	const dispatch = createEventDispatcher<{ select: { index: number } }>();
 
 	let navElement: HTMLElement;
+	let markerScroller: HTMLElement;
 	let previewIndex: number | null = null;
 	let previewTop = 0;
+
+	const keepActiveMarkerVisible = async () => {
+		await tick();
+		const marker = markerScroller?.querySelector<HTMLElement>(
+			`[data-quick-nav-index="${activeIndex}"]`
+		);
+		if (!marker) return;
+
+		const scrollerRect = markerScroller.getBoundingClientRect();
+		const markerRect = marker.getBoundingClientRect();
+		if (markerRect.top >= scrollerRect.top && markerRect.bottom <= scrollerRect.bottom) return;
+
+		markerScroller.scrollTop +=
+			markerRect.top - scrollerRect.top - (scrollerRect.height - markerRect.height) / 2;
+	};
+
+	$: if (markerScroller && results.length) {
+		activeIndex;
+		void keepActiveMarkerVisible();
+	}
 
 	const showPreview = (index: number, target: HTMLButtonElement) => {
 		const navRect = navElement.getBoundingClientRect();
@@ -60,10 +81,14 @@
 			</div>
 		{/if}
 
-		<div class="max-h-[60vh] overflow-y-auto overscroll-contain py-0.5">
+		<div
+			bind:this={markerScroller}
+			class="scrollbar-none max-h-[60vh] overflow-y-auto overscroll-contain py-0.5"
+		>
 			{#each results as result, index (`${result.source}:${result.source_object_id}`)}
 				<button
 					type="button"
+					data-quick-nav-index={index}
 					class="group flex h-7 w-11 cursor-pointer items-center justify-end rounded-md px-1 outline-none transition-colors hover:bg-gray-100 focus-visible:ring-2 focus-visible:ring-gray-500 dark:hover:bg-gray-800"
 					aria-label={`跳转到第 ${index + 1} 条结果：${result.title || '无标题'}`}
 					aria-current={index === activeIndex ? 'true' : undefined}

@@ -72,7 +72,7 @@
 				mode,
 				knowledge_ids: knowledgeIds(),
 				sources: selectedSources.length ? selectedSources : undefined,
-				limit: 20
+				limit: mode === 'keyword' ? 150 : 20
 			});
 			results = resultsForState(results, response.results, false);
 			resultQuery = query;

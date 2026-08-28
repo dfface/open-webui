@@ -22,7 +22,7 @@ class MailuoSearchRequest(BaseModel):
     mode: SearchMode = SearchMode.HYBRID
     knowledge_ids: list[str] | None = None
     sources: list[str] | None = None
-    limit: int = Field(default=20, ge=1, le=50)
+    limit: int = Field(default=20, ge=1, le=150)
 
     @field_validator('query')
     @classmethod
