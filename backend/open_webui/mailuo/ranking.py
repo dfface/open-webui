@@ -1,6 +1,11 @@
 from collections import defaultdict
 
-from open_webui.mailuo.schemas import MailuoChunkMatch, MailuoObjectResult, MailuoSnippet
+from open_webui.mailuo.schemas import (
+    MailuoChunkMatch,
+    MailuoObjectResult,
+    MailuoSnippet,
+    SearchSort,
+)
 
 
 def _merge_ordered(values: list[list[str]]) -> list[str]:
@@ -11,6 +16,7 @@ def aggregate_chunk_matches(
     rows: list[MailuoChunkMatch],
     limit: int = 20,
     snippets_per_object: int = 3,
+    sort: SearchSort = SearchSort.RELEVANCE,
 ) -> list[MailuoObjectResult]:
     grouped: dict[tuple[str, str], list[MailuoChunkMatch]] = defaultdict(list)
     for row in rows:
@@ -42,12 +48,31 @@ def aggregate_chunk_matches(
             )
         )
 
-    results.sort(
-        key=lambda result: (
-            -result.score,
-            -result.source_updated_at.timestamp(),
-            result.source,
-            result.source_object_id,
+    if sort == SearchSort.UPDATED_DESC:
+        results.sort(
+            key=lambda result: (
+                -result.source_updated_at.timestamp(),
+                -result.score,
+                result.source,
+                result.source_object_id,
+            )
         )
-    )
+    elif sort == SearchSort.UPDATED_ASC:
+        results.sort(
+            key=lambda result: (
+                result.source_updated_at.timestamp(),
+                -result.score,
+                result.source,
+                result.source_object_id,
+            )
+        )
+    else:
+        results.sort(
+            key=lambda result: (
+                -result.score,
+                -result.source_updated_at.timestamp(),
+                result.source,
+                result.source_object_id,
+            )
+        )
     return results[:limit]

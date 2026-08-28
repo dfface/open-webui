@@ -89,7 +89,12 @@ class MailuoSearchService:
         if successful_queries == 0:
             raise MailuoSearchError('All Mailuo knowledge searches failed')
 
-        results = aggregate_chunk_matches(rows, limit=form.limit, snippets_per_object=3)
+        results = aggregate_chunk_matches(
+            rows,
+            limit=form.limit,
+            snippets_per_object=3,
+            sort=form.sort,
+        )
         log.info(
             'mailuo_search requested_mode=%s executed_mode=%s degraded=%s '
             'knowledge_count=%s result_count=%s latency_ms=%s',

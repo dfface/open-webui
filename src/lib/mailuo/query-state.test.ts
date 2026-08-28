@@ -7,6 +7,7 @@ describe('Mailuo query URL state', () => {
 		const query = serializeMailuoQueryState({
 			query: '统一搜索 中文',
 			mode: 'semantic',
+			sort: 'updated_desc',
 			knowledgeIds: ['kb-2', 'kb-1'],
 			sources: ['memos', 'future_source']
 		});
@@ -16,6 +17,7 @@ describe('Mailuo query URL state', () => {
 		expect(parsed).toEqual({
 			query: '统一搜索 中文',
 			mode: 'semantic',
+			sort: 'updated_desc',
 			knowledgeIds: ['kb-2', 'kb-1'],
 			sources: ['memos', 'future_source']
 		});
@@ -24,13 +26,14 @@ describe('Mailuo query URL state', () => {
 	test('uses safe defaults and removes duplicate or blank filters', () => {
 		const parsed = parseMailuoQueryState(
 			new URL(
-				'https://example.test/mailuo?q=%20test%20&mode=invalid&knowledge=kb-1&knowledge=kb-1&source=&source=outline'
+				'https://example.test/mailuo?q=%20test%20&mode=invalid&sort=invalid&knowledge=kb-1&knowledge=kb-1&source=&source=outline'
 			)
 		);
 
 		expect(parsed).toEqual({
 			query: 'test',
 			mode: 'hybrid',
+			sort: 'relevance',
 			knowledgeIds: ['kb-1'],
 			sources: ['outline']
 		});

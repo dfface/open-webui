@@ -11,6 +11,12 @@ class SearchMode(enum.StrEnum):
     SEMANTIC = 'semantic'
 
 
+class SearchSort(enum.StrEnum):
+    RELEVANCE = 'relevance'
+    UPDATED_DESC = 'updated_desc'
+    UPDATED_ASC = 'updated_asc'
+
+
 def _deduplicate(values: list[str] | None) -> list[str] | None:
     if values is None:
         return None
@@ -23,6 +29,7 @@ class MailuoSearchRequest(BaseModel):
     knowledge_ids: list[str] | None = None
     sources: list[str] | None = None
     limit: int = Field(default=20, ge=1, le=150)
+    sort: SearchSort = SearchSort.RELEVANCE
 
     @field_validator('query')
     @classmethod

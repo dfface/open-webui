@@ -1,7 +1,7 @@
 import datetime as dt
 
 from open_webui.mailuo.ranking import aggregate_chunk_matches
-from open_webui.mailuo.schemas import MailuoChunkMatch
+from open_webui.mailuo.schemas import MailuoChunkMatch, SearchSort
 
 
 def row(
@@ -63,3 +63,18 @@ def test_aggregate_limits_objects_and_snippets_with_stable_ties():
     assert [item.source_object_id for item in results] == ['newer-a', 'newer-b']
     assert [match.chunk_no for match in results[0].matches] == [0, 1, 2]
     assert results[0].matched_by == ['semantic', 'trigram', 'fulltext']
+
+
+def test_aggregate_can_sort_keyword_results_by_update_time():
+    rows = [
+        row('outline', 'older-relevant', 0, 0.9, '2026-08-01T00:00:00', ['fulltext']),
+        row('memos', 'newer', 0, 0.3, '2026-08-28T00:00:00', ['fulltext']),
+    ]
+
+    relevant = aggregate_chunk_matches(rows, sort=SearchSort.RELEVANCE)
+    newest = aggregate_chunk_matches(rows, sort=SearchSort.UPDATED_DESC)
+    oldest = aggregate_chunk_matches(rows, sort=SearchSort.UPDATED_ASC)
+
+    assert [item.source_object_id for item in relevant] == ['older-relevant', 'newer']
+    assert [item.source_object_id for item in newest] == ['newer', 'older-relevant']
+    assert [item.source_object_id for item in oldest] == ['older-relevant', 'newer']

@@ -89,6 +89,7 @@ class MailuoAnswerService:
                 knowledge_ids=form.knowledge_ids,
                 sources=form.sources,
                 limit=form.limit,
+                sort=form.sort,
             ),
             user,
             db=db,

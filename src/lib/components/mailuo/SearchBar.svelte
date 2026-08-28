@@ -2,10 +2,11 @@
 	import { createEventDispatcher } from 'svelte';
 
 	import type { MailuoAnswerModel } from '$lib/mailuo/answer-view-model';
-	import type { MailuoIntent, MailuoSearchMode } from '$lib/mailuo/types';
+	import type { MailuoIntent, MailuoSearchMode, MailuoSearchSort } from '$lib/mailuo/types';
 
 	export let query = '';
 	export let mode: MailuoSearchMode = 'hybrid';
+	export let sort: MailuoSearchSort = 'relevance';
 	export let intent: MailuoIntent = 'search';
 	export let modelId = '';
 	export let answerModels: MailuoAnswerModel[] = [];
@@ -126,6 +127,21 @@
 				</button>
 			{/each}
 		</div>
+		{#if mode === 'keyword'}
+			<label class="flex min-h-[44px] items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+				<span>排序</span>
+				<select
+					bind:value={sort}
+					class="cursor-pointer rounded-lg border border-gray-200 bg-white px-2 py-1.5 text-xs text-gray-700 outline-none focus:border-gray-400 focus:ring-2 focus:ring-gray-200 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:focus:ring-gray-800"
+					aria-label="关键词结果排序"
+					disabled={loading}
+				>
+					<option value="relevance">相关度</option>
+					<option value="updated_desc">最近更新</option>
+					<option value="updated_asc">最早更新</option>
+				</select>
+			</label>
+		{/if}
 		<span class="ml-auto px-1 text-xs font-medium text-gray-500 dark:text-gray-400">用途</span>
 		<div
 			class="flex h-9 shrink-0 overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700"

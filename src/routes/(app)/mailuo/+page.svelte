@@ -29,6 +29,7 @@
 		MailuoObjectResult,
 		MailuoSearchMode,
 		MailuoSearchResponse,
+		MailuoSearchSort,
 		MailuoSourceFacet
 	} from '$lib/mailuo/types';
 	import { resultsForState, sourceLabel } from '$lib/mailuo/view-model';
@@ -36,6 +37,7 @@
 	let searchBar: SearchBar;
 	let query = '';
 	let mode: MailuoSearchMode = 'hybrid';
+	let sort: MailuoSearchSort = 'relevance';
 	let intent: MailuoIntent = 'search';
 	let selectedModelId = '';
 	let selectedKnowledgeId = '';
@@ -91,6 +93,7 @@
 		const search = serializeMailuoQueryState({
 			query,
 			mode,
+			sort,
 			knowledgeIds: selectedKnowledgeId ? [selectedKnowledgeId] : [],
 			sources: selectedSources
 		});
@@ -116,7 +119,8 @@
 				mode,
 				knowledge_ids: knowledgeIds(),
 				sources: selectedSources.length ? selectedSources : undefined,
-				limit: mode === 'keyword' ? 150 : 20
+				limit: mode === 'keyword' ? 150 : 20,
+				sort: mode === 'keyword' ? sort : 'relevance'
 			});
 			results = resultsForState(results, response.results, false);
 			resultQuery = query;
@@ -176,6 +180,7 @@
 				mode,
 				knowledge_ids: knowledgeIds(),
 				sources: selectedSources.length ? selectedSources : undefined,
+				sort: mode === 'keyword' ? sort : 'relevance',
 				history: answerHistoryFromTurns(historyTurns)
 			});
 			answerController = controller;
@@ -218,6 +223,7 @@
 		const state = parseMailuoQueryState(url);
 		query = state.query;
 		mode = state.mode;
+		sort = state.sort;
 		selectedKnowledgeId = state.knowledgeIds[0] || '';
 		selectedSources = state.sources;
 		await loadFacets();
@@ -366,6 +372,7 @@
 			bind:this={searchBar}
 			bind:query
 			bind:mode
+			bind:sort
 			bind:intent
 			bind:modelId={selectedModelId}
 			{answerModels}

@@ -1,4 +1,5 @@
 export type MailuoSearchMode = 'hybrid' | 'keyword' | 'semantic';
+export type MailuoSearchSort = 'relevance' | 'updated_desc' | 'updated_asc';
 export type MailuoIntent = 'search' | 'answer';
 
 export type MailuoKnowledge = {
@@ -38,6 +39,7 @@ export type MailuoSearchRequest = {
 	knowledge_ids?: string[];
 	sources?: string[];
 	limit: number;
+	sort?: MailuoSearchSort;
 };
 
 export type MailuoAnswerRequest = Omit<MailuoSearchRequest, 'limit'> & {
@@ -72,6 +74,7 @@ export type MailuoFacetResponse = {
 export type MailuoQueryState = {
 	query: string;
 	mode: MailuoSearchMode;
+	sort: MailuoSearchSort;
 	knowledgeIds: string[];
 	sources: string[];
 };
