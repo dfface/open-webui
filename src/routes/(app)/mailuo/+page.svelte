@@ -1,18 +1,29 @@
 <script lang="ts">
 	import { onDestroy, onMount, tick } from 'svelte';
-	import { showSidebar } from '$lib/stores';
+	import { browser } from '$app/environment';
+	import { config, models, settings, showSidebar } from '$lib/stores';
 
+	import AnswerCard from '$lib/components/mailuo/AnswerCard.svelte';
 	import SearchBar from '$lib/components/mailuo/SearchBar.svelte';
 	import SearchFilters from '$lib/components/mailuo/SearchFilters.svelte';
 	import ResultQuickNav from '$lib/components/mailuo/ResultQuickNav.svelte';
 	import SearchResult from '$lib/components/mailuo/SearchResult.svelte';
 	import SearchStates from '$lib/components/mailuo/SearchStates.svelte';
-	import { getMailuoFacets, getMailuoKnowledges, searchMailuo } from '$lib/mailuo/api';
+	import {
+		answerMailuo,
+		getMailuoFacets,
+		getMailuoKnowledges,
+		searchMailuo
+	} from '$lib/mailuo/api';
+	import { availableAnswerModels, resolveAnswerModelId } from '$lib/mailuo/answer-view-model';
+	import { createOpenAITextStream } from '$lib/apis/streaming';
 	import { parseMailuoQueryState, serializeMailuoQueryState } from '$lib/mailuo/query-state';
 	import type {
 		MailuoKnowledge,
+		MailuoIntent,
 		MailuoObjectResult,
 		MailuoSearchMode,
+		MailuoSearchResponse,
 		MailuoSourceFacet
 	} from '$lib/mailuo/types';
 	import { resultsForState, sourceLabel } from '$lib/mailuo/view-model';
@@ -20,6 +31,8 @@
 	let searchBar: SearchBar;
 	let query = '';
 	let mode: MailuoSearchMode = 'hybrid';
+	let intent: MailuoIntent = 'search';
+	let selectedModelId = '';
 	let selectedKnowledgeId = '';
 	let selectedSources: string[] = [];
 
@@ -28,17 +41,33 @@
 	let results: MailuoObjectResult[] = [];
 	let resultQuery = '';
 	let resultMode: MailuoSearchMode = 'hybrid';
-	let loading = false;
+	let searchLoading = false;
+	let answerLoading = false;
 	let initial = true;
 	let error = '';
 	let degraded = false;
 	let warnings: string[] = [];
+	let answer = '';
+	let answerError = '';
+	let answerController: AbortController | undefined;
 	let expandedResults = new Set<string>();
 	let resultViewport: HTMLDivElement;
 	let activeResultIndex = 0;
 	let scrollFrame: number | undefined;
 
 	$: sourceLabels = new Map(facets.map((facet) => [facet.source, facet.display_name]));
+	$: answerModels = availableAnswerModels($models);
+	$: selectedModel = answerModels.find((model) => model.id === selectedModelId);
+	$: loading = searchLoading || answerLoading;
+	$: if (answerModels.length > 0 && !answerModels.some((model) => model.id === selectedModelId)) {
+		selectedModelId = resolveAnswerModelId(
+			answerModels,
+			browser ? (localStorage.getItem('mailuo_answer_model') ?? '') : '',
+			$settings?.models ?? [],
+			($config?.default_models ?? '').split(',').find(Boolean) ?? ''
+		);
+	}
+	$: if (browser && selectedModelId) localStorage.setItem('mailuo_answer_model', selectedModelId);
 
 	const knowledgeIds = () => (selectedKnowledgeId ? [selectedKnowledgeId] : undefined);
 
@@ -62,8 +91,10 @@
 	const executeSearch = async (updateUrl = true) => {
 		query = query.trim();
 		if (!query || loading) return;
-		loading = true;
+		searchLoading = true;
 		error = '';
+		answer = '';
+		answerError = '';
 		if (updateUrl) syncUrl();
 
 		try {
@@ -87,8 +118,59 @@
 			warnings = [];
 			initial = false;
 		} finally {
-			loading = false;
+			searchLoading = false;
 		}
+	};
+
+	const executeAnswer = async (updateUrl = true) => {
+		query = query.trim();
+		if (!query || loading || !selectedModelId) return;
+		answerController?.abort();
+		answerLoading = true;
+		answer = '';
+		answerError = '';
+		error = '';
+		initial = false;
+		if (updateUrl) syncUrl();
+
+		try {
+			const [response, controller] = await answerMailuo(localStorage.token, {
+				query,
+				model: selectedModelId,
+				mode,
+				knowledge_ids: knowledgeIds(),
+				sources: selectedSources.length ? selectedSources : undefined
+			});
+			answerController = controller;
+			if (!response.body) throw new Error('模型没有返回可读取的回答');
+			const stream = await createOpenAITextStream(response.body, false);
+			for await (const update of stream) {
+				if (update.error) throw new Error(update.error?.message ?? '模型回答失败');
+				if (update.sources) {
+					const evidence = update.sources as MailuoSearchResponse;
+					results = evidence.results;
+					resultQuery = query;
+					resultMode = evidence.executed_mode;
+					degraded = evidence.degraded;
+					warnings = evidence.warnings;
+					expandedResults = new Set();
+				}
+				if (update.value) answer += update.value;
+				if (update.done) break;
+			}
+		} catch (answerFailure) {
+			if ((answerFailure as DOMException)?.name !== 'AbortError') {
+				answerError = answerFailure instanceof Error ? answerFailure.message : '脉络问答失败';
+			}
+		} finally {
+			answerLoading = false;
+			answerController = undefined;
+		}
+	};
+
+	const execute = (nextIntent: MailuoIntent, updateUrl = true) => {
+		intent = nextIntent;
+		return nextIntent === 'answer' ? executeAnswer(updateUrl) : executeSearch(updateUrl);
 	};
 
 	const applyUrl = async (url: URL, runSearch: boolean) => {
@@ -191,6 +273,7 @@
 		window.removeEventListener('popstate', onPopState);
 		window.removeEventListener('keydown', onWindowKeydown);
 		if (scrollFrame !== undefined) window.cancelAnimationFrame(scrollFrame);
+		answerController?.abort();
 	});
 </script>
 
@@ -229,8 +312,11 @@
 			bind:this={searchBar}
 			bind:query
 			bind:mode
+			bind:intent
+			bind:modelId={selectedModelId}
+			{answerModels}
 			{loading}
-			on:submit={() => executeSearch()}
+			on:submit={(event) => execute(event.detail.intent)}
 		/>
 		<SearchFilters
 			{knowledges}
@@ -243,12 +329,25 @@
 		<section class="mt-6" aria-label="搜索结果" aria-busy={loading}>
 			<SearchStates
 				{initial}
-				{loading}
+				loading={searchLoading}
 				{error}
 				{degraded}
 				{warnings}
 				empty={!initial && results.length === 0}
 			/>
+
+			{#if intent === 'answer' && (answerLoading || answer || answerError)}
+				<AnswerCard
+					content={answer}
+					loading={answerLoading}
+					error={answerError}
+					modelName={selectedModel?.name || selectedModel?.id || ''}
+					{results}
+					on:stop={() => answerController?.abort()}
+					on:retry={() => executeAnswer()}
+					on:citation={(event) => jumpToResult(event.detail.index)}
+				/>
+			{/if}
 
 			{#if results.length > 0}
 				<div class="mb-3 flex items-center justify-between gap-3 px-1">
@@ -256,7 +355,7 @@
 						id="mailuo-results-heading"
 						class="text-sm font-medium text-gray-700 dark:text-gray-200"
 					>
-						{results.length} 条结果
+						{results.length} 条{intent === 'answer' ? '依据' : '结果'}
 					</h2>
 					<div class="text-xs text-gray-400" aria-live="polite">
 						{resultMode === 'hybrid'

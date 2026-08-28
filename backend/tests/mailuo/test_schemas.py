@@ -1,5 +1,5 @@
 import pytest
-from open_webui.mailuo.schemas import MailuoSearchRequest, SearchMode
+from open_webui.mailuo.schemas import MailuoAnswerRequest, MailuoSearchRequest, SearchMode
 from pydantic import ValidationError
 
 
@@ -24,6 +24,21 @@ def test_keyword_search_accepts_full_candidate_limit():
     assert request.limit == 150
 
 
+def test_answer_request_normalizes_query_filters_and_requires_a_model():
+    request = MailuoAnswerRequest(
+        query='  如何维护统一搜索？  ',
+        model='  qwen3  ',
+        knowledge_ids=['kb-1', 'kb-1'],
+        sources=['outline', 'outline'],
+    )
+
+    assert request.query == '如何维护统一搜索？'
+    assert request.model == 'qwen3'
+    assert request.knowledge_ids == ['kb-1']
+    assert request.sources == ['outline']
+    assert request.limit == 8
+
+
 @pytest.mark.parametrize(
     ('payload', 'field'),
     [
@@ -38,3 +53,11 @@ def test_search_request_rejects_invalid_input(payload, field):
         MailuoSearchRequest(**payload)
 
     assert field in str(exc_info.value)
+
+
+@pytest.mark.parametrize('model', ['', '   '])
+def test_answer_request_rejects_an_empty_model(model):
+    with pytest.raises(ValidationError) as exc_info:
+        MailuoAnswerRequest(query='x', model=model)
+
+    assert 'model' in str(exc_info.value)

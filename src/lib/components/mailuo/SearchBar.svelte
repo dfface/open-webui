@@ -1,14 +1,18 @@
 <script lang="ts">
 	import { createEventDispatcher } from 'svelte';
 
-	import type { MailuoSearchMode } from '$lib/mailuo/types';
+	import type { MailuoAnswerModel } from '$lib/mailuo/answer-view-model';
+	import type { MailuoIntent, MailuoSearchMode } from '$lib/mailuo/types';
 
 	export let query = '';
 	export let mode: MailuoSearchMode = 'hybrid';
+	export let intent: MailuoIntent = 'search';
+	export let modelId = '';
+	export let answerModels: MailuoAnswerModel[] = [];
 	export let loading = false;
 
 	let input: HTMLInputElement;
-	const dispatch = createEventDispatcher<{ submit: void }>();
+	const dispatch = createEventDispatcher<{ submit: { intent: MailuoIntent } }>();
 
 	export const focus = () => input?.focus();
 
@@ -22,11 +26,16 @@
 		{ value: 'keyword', label: '关键词', description: '查找准确表述' },
 		{ value: 'semantic', label: '语义', description: '查找相近含义' }
 	];
+
+	const submit = (nextIntent: MailuoIntent = intent) => {
+		intent = nextIntent;
+		dispatch('submit', { intent: nextIntent });
+	};
 </script>
 
 <form
 	class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm transition-shadow focus-within:border-gray-300 focus-within:shadow-md dark:border-gray-800 dark:bg-gray-900 dark:focus-within:border-gray-700"
-	on:submit|preventDefault={() => dispatch('submit')}
+	on:submit|preventDefault={() => submit()}
 >
 	<label for="mailuo-search" class="sr-only">搜索脉络</label>
 	<div class="flex items-center gap-2 p-2">
@@ -68,34 +77,48 @@
 				</svg>
 			</button>
 		{/if}
-		<button
-			type="submit"
-			class="flex h-11 shrink-0 cursor-pointer items-center justify-center gap-2 rounded-xl bg-gray-900 px-5 text-sm font-medium text-white transition-colors hover:bg-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-200 dark:focus-visible:ring-offset-gray-900"
-			disabled={loading || !query.trim()}
+		<div
+			class="flex h-11 shrink-0 overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700"
+			role="group"
+			aria-label="执行方式"
 		>
-			{#if loading}
-				<svg
-					class="size-4 animate-spin motion-reduce:animate-none"
-					viewBox="0 0 24 24"
-					aria-hidden="true"
+			{#each [{ value: 'search', label: '搜索' }, { value: 'answer', label: '问答' }] as action}
+				<button
+					type="button"
+					class="flex min-w-[4.25rem] cursor-pointer items-center justify-center gap-1.5 px-3 text-sm font-medium transition-colors focus-visible:z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-gray-500 {intent ===
+					action.value
+						? 'bg-gray-900 text-white dark:bg-white dark:text-gray-900'
+						: 'bg-white text-gray-600 hover:bg-gray-100 hover:text-gray-900 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-white'}"
+					disabled={loading || !query.trim() || (action.value === 'answer' && !modelId)}
+					aria-pressed={intent === action.value}
+					on:click={() => submit(action.value as MailuoIntent)}
 				>
-					<circle
-						class="opacity-25"
-						cx="12"
-						cy="12"
-						r="9"
-						fill="none"
-						stroke="currentColor"
-						stroke-width="3"
-					></circle>
-					<path class="opacity-80" fill="currentColor" d="M21 12a9 9 0 0 0-9-9v3a6 6 0 0 1 6 6h3Z"
-					></path>
-				</svg>
-				<span>检索中</span>
-			{:else}
-				<span>搜索</span>
-			{/if}
-		</button>
+					{#if loading && intent === action.value}
+						<svg
+							class="size-4 animate-spin motion-reduce:animate-none"
+							viewBox="0 0 24 24"
+							aria-hidden="true"
+						>
+							<circle
+								class="opacity-25"
+								cx="12"
+								cy="12"
+								r="9"
+								fill="none"
+								stroke="currentColor"
+								stroke-width="3"
+							></circle>
+							<path
+								class="opacity-80"
+								fill="currentColor"
+								d="M21 12a9 9 0 0 0-9-9v3a6 6 0 0 1 6 6h3Z"
+							></path>
+						</svg>
+					{/if}
+					<span>{action.label}</span>
+				</button>
+			{/each}
+		</div>
 	</div>
 
 	<div
@@ -119,6 +142,21 @@
 				</button>
 			{/each}
 		</div>
-		<span class="ml-auto hidden text-xs text-gray-400 sm:inline">按 / 快速聚焦</span>
+		<label
+			class="ml-auto flex min-h-[44px] min-w-0 items-center gap-2 text-xs text-gray-500 dark:text-gray-400"
+		>
+			<span class="hidden sm:inline">问答模型</span>
+			<select
+				bind:value={modelId}
+				class="max-w-44 cursor-pointer rounded-lg border border-gray-200 bg-white px-2 py-1.5 text-xs text-gray-700 outline-none focus:border-gray-400 focus:ring-2 focus:ring-gray-200 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:focus:ring-gray-800"
+				aria-label="问答模型"
+				disabled={answerModels.length === 0 || loading}
+			>
+				{#if answerModels.length === 0}<option value="">暂无可用模型</option>{/if}
+				{#each answerModels as model}
+					<option value={model.id}>{model.name || model.id}</option>
+				{/each}
+			</select>
+		</label>
 	</div>
 </form>

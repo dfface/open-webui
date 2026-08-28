@@ -38,6 +38,19 @@ class MailuoSearchRequest(BaseModel):
         return _deduplicate(value)
 
 
+class MailuoAnswerRequest(MailuoSearchRequest):
+    model: str = Field(min_length=1, max_length=512)
+    limit: int = Field(default=8, ge=1, le=12)
+
+    @field_validator('model')
+    @classmethod
+    def normalize_model(cls, value: str) -> str:
+        value = value.strip()
+        if not value:
+            raise ValueError('model must not be empty')
+        return value
+
+
 class MailuoFacetRequest(BaseModel):
     knowledge_ids: list[str] | None = None
 

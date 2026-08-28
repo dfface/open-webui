@@ -1,4 +1,5 @@
 export type MailuoSearchMode = 'hybrid' | 'keyword' | 'semantic';
+export type MailuoIntent = 'search' | 'answer';
 
 export type MailuoKnowledge = {
 	id: string;
@@ -37,6 +38,10 @@ export type MailuoSearchRequest = {
 	knowledge_ids?: string[];
 	sources?: string[];
 	limit: number;
+};
+
+export type MailuoAnswerRequest = Omit<MailuoSearchRequest, 'limit'> & {
+	model: string;
 };
 
 export type MailuoSearchResponse = {

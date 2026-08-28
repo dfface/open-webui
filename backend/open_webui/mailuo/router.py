@@ -4,6 +4,7 @@ import uuid
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 
 from open_webui.internal.db import get_async_session
+from open_webui.mailuo.answer import MailuoAnswerService
 from open_webui.mailuo.errors import (
     MailuoConfigurationError,
     MailuoDatabaseError,
@@ -13,6 +14,7 @@ from open_webui.mailuo.errors import (
 )
 from open_webui.mailuo.knowledge import list_accessible_mailuo_knowledges
 from open_webui.mailuo.schemas import (
+    MailuoAnswerRequest,
     MailuoFacetRequest,
     MailuoFacetResponse,
     MailuoKnowledge,
@@ -26,6 +28,7 @@ log = logging.getLogger(__name__)
 
 router = APIRouter(prefix='/mailuo')
 service = MailuoSearchService()
+answer_service = MailuoAnswerService(search_service=service)
 
 
 def _request_id(request: Request) -> str:
@@ -95,5 +98,20 @@ async def search_mailuo(
 ):
     try:
         return await service.search(request, form, user, db=db)
+    except Exception as exc:
+        raise _http_error(request, exc) from None
+
+
+@router.post('/answer')
+async def answer_mailuo(
+    request: Request,
+    form: MailuoAnswerRequest,
+    user=Depends(get_verified_user),
+    db=Depends(get_async_session),
+):
+    try:
+        return await answer_service.answer(request, form, user, db=db)
+    except HTTPException:
+        raise
     except Exception as exc:
         raise _http_error(request, exc) from None

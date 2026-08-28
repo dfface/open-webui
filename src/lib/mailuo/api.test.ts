@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, test, vi } from 'vitest';
 
-import { getMailuoFacets, getMailuoKnowledges, searchMailuo } from './api';
+import { answerMailuo, getMailuoFacets, getMailuoKnowledges, searchMailuo } from './api';
 
 afterEach(() => {
 	vi.unstubAllGlobals();
@@ -69,6 +69,36 @@ describe('Mailuo API client', () => {
 		expect(fetchMock.mock.calls[0][1].method).toBe('GET');
 		expect(fetchMock.mock.calls[1][1].method).toBe('POST');
 		expect(JSON.parse(fetchMock.mock.calls[1][1].body)).toEqual({ knowledge_ids: ['kb-1'] });
+	});
+
+	test('starts an authenticated answer stream with the user selected model', async () => {
+		const response = new Response('data: [DONE]\n\n', {
+			status: 200,
+			headers: { 'Content-Type': 'text/event-stream' }
+		});
+		const fetchMock = vi.fn().mockResolvedValue(response);
+		vi.stubGlobal('fetch', fetchMock);
+
+		const [stream, controller] = await answerMailuo('token-1', {
+			query: '怎么维护统一搜索？',
+			model: 'qwen3',
+			mode: 'hybrid',
+			knowledge_ids: ['kb-1'],
+			sources: ['outline']
+		});
+
+		expect(stream).toBe(response);
+		expect(controller).toBeInstanceOf(AbortController);
+		const [url, init] = fetchMock.mock.calls[0];
+		expect(url).toMatch(/\/api\/v1\/mailuo\/answer$/);
+		expect(init.headers.authorization).toBe('Bearer token-1');
+		expect(JSON.parse(init.body)).toEqual({
+			query: '怎么维护统一搜索？',
+			model: 'qwen3',
+			mode: 'hybrid',
+			knowledge_ids: ['kb-1'],
+			sources: ['outline']
+		});
 	});
 
 	test('throws the safe API detail message for non-success responses', async () => {

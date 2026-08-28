@@ -2,6 +2,7 @@ import { WEBUI_API_BASE_URL } from '$lib/constants';
 
 import type {
 	MailuoFacetResponse,
+	MailuoAnswerRequest,
 	MailuoKnowledge,
 	MailuoSearchRequest,
 	MailuoSearchResponse
@@ -49,3 +50,26 @@ export const searchMailuo = (token: string, payload: MailuoSearchRequest) =>
 		method: 'POST',
 		body: JSON.stringify(payload)
 	});
+
+export const answerMailuo = async (
+	token: string,
+	payload: MailuoAnswerRequest
+): Promise<[Response, AbortController]> => {
+	const controller = new AbortController();
+	const response = await fetch(`${MAILUO_API_URL}/answer`, {
+		method: 'POST',
+		signal: controller.signal,
+		headers: {
+			Accept: 'text/event-stream',
+			'Content-Type': 'application/json',
+			authorization: `Bearer ${token}`
+		},
+		body: JSON.stringify(payload)
+	});
+
+	if (!response.ok) {
+		const body = await response.json().catch(() => null);
+		throw new Error(errorMessage(body));
+	}
+	return [response, controller];
+};
