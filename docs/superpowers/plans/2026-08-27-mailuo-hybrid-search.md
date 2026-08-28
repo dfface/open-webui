@@ -28,10 +28,12 @@
 ### Task 1: 修复 Open WebUI 外部 pgvector 查询向量类型
 
 **Files:**
+
 - Modify: `backend/open_webui/retrieval/external.py`
 - Create: `backend/tests/retrieval/test_external_pgvector.py`
 
 **Interfaces:**
+
 - Consumes: Open WebUI `_retrieve_pgvector(...)` 的 embedding `list[float]`。
 - Produces: 传给 psycopg 的 `pgvector.Vector`，保证执行 `vector <=> vector`。
 
@@ -81,11 +83,13 @@ git commit -m "fix: adapt external pgvector query vectors"
 ### Task 2: 为 `public.chunks` 增加混合检索数据库能力
 
 **Files:**
+
 - Create in Mailuo repo: `/Users/handy/Documents/projects/mailuo/migrations/0002_public_chunks_hybrid_search.sql`
 - Create in Mailuo repo: `/Users/handy/Documents/projects/mailuo/tests/sql/public_chunks_hybrid_search.sql`
 - Modify in Mailuo repo: `/Users/handy/Documents/projects/mailuo/migrations/README.md`
 
 **Interfaces:**
+
 - Consumes: `public.chunks(source, source_object_id, chunk_no, title, content, source_url, source_updated_at, metadata, embedding)`。
 - Produces: `public.mailuo_hybrid_search(text, vector, text, text[], integer, integer)` 和 `public.mailuo_source_facets()`。
 
@@ -163,6 +167,7 @@ Expected: 两条命令 exit 0，测试事务回滚。
 ### Task 3: 定义 Mailuo 后端契约与对象聚合
 
 **Files:**
+
 - Create: `backend/open_webui/mailuo/__init__.py`
 - Create: `backend/open_webui/mailuo/schemas.py`
 - Create: `backend/open_webui/mailuo/ranking.py`
@@ -170,6 +175,7 @@ Expected: 两条命令 exit 0，测试事务回滚。
 - Create: `backend/tests/mailuo/test_schemas.py`
 
 **Interfaces:**
+
 - Produces: `SearchMode`、`MailuoSearchRequest`、`MailuoSearchResponse`、`MailuoChunkMatch`、`MailuoObjectResult`、`SourceFacet`、`aggregate_chunk_matches(rows, limit, snippets_per_object)`。
 - Consumes: 数据库函数返回的 chunk rows。
 
@@ -218,12 +224,14 @@ git commit -m "feat: define Mailuo search contracts"
 ### Task 4: 实现 Knowledge 授权和 PostgreSQL gateway
 
 **Files:**
+
 - Create: `backend/open_webui/mailuo/knowledge.py`
 - Create: `backend/open_webui/mailuo/postgres.py`
 - Create: `backend/tests/mailuo/test_knowledge.py`
 - Create: `backend/tests/mailuo/test_postgres.py`
 
 **Interfaces:**
+
 - Produces: `list_accessible_mailuo_knowledges(user, db)`、`resolve_mailuo_knowledges(ids, user, db)`、`MailuoPostgresGateway.search(...)`、`MailuoPostgresGateway.facets()`。
 - Consumes: Open WebUI `Knowledges`、`Groups`、`Config` 和外部 connection 配置。
 
@@ -273,12 +281,14 @@ git commit -m "feat: connect Mailuo search to pgvector knowledge"
 ### Task 5: 实现 embedding 锁、搜索编排与降级
 
 **Files:**
+
 - Create: `backend/open_webui/mailuo/embedding.py`
 - Create: `backend/open_webui/mailuo/service.py`
 - Create: `backend/tests/mailuo/test_embedding.py`
 - Create: `backend/tests/mailuo/test_service.py`
 
 **Interfaces:**
+
 - Produces: `generate_query_embedding(request, query, user)`、`MailuoSearchService.search(...)`、`MailuoSearchService.facets(...)`。
 - Consumes: `request.app.state.redis`、`request.app.state.EMBEDDING_FUNCTION`、Knowledge resolver、gateway、聚合函数。
 
@@ -336,11 +346,13 @@ git commit -m "feat: orchestrate Mailuo hybrid search"
 ### Task 6: 增加 Mailuo FastAPI router
 
 **Files:**
+
 - Create: `backend/open_webui/mailuo/router.py`
 - Create: `backend/tests/mailuo/test_router.py`
 - Modify: `backend/open_webui/main.py`
 
 **Interfaces:**
+
 - Produces:
   - `GET /api/v1/mailuo/knowledges`
   - `POST /api/v1/mailuo/facets`
@@ -386,6 +398,7 @@ git commit -m "feat: expose Mailuo search API"
 ### Task 7: 增加前端 API、类型和 URL 状态
 
 **Files:**
+
 - Create: `src/lib/mailuo/types.ts`
 - Create: `src/lib/mailuo/api.ts`
 - Create: `src/lib/mailuo/query-state.ts`
@@ -395,6 +408,7 @@ git commit -m "feat: expose Mailuo search API"
 - Create: `src/lib/mailuo/view-model.test.ts`
 
 **Interfaces:**
+
 - Produces: `searchMailuo(token, request)`、`getMailuoKnowledges(token)`、`getMailuoFacets(token, knowledgeIds)`、`parseMailuoQueryState(url)`、`serializeMailuoQueryState(state)`。
 - Consumes: `/api/v1/mailuo/*` JSON 契约。
 
@@ -433,6 +447,7 @@ git commit -m "feat: add Mailuo frontend client"
 ### Task 8: 实现“脉络”搜索页面和入口
 
 **Files:**
+
 - Create: `src/lib/components/mailuo/SearchBar.svelte`
 - Create: `src/lib/components/mailuo/SearchFilters.svelte`
 - Create: `src/lib/components/mailuo/SearchResult.svelte`
@@ -441,6 +456,7 @@ git commit -m "feat: add Mailuo frontend client"
 - Modify: `src/lib/components/layout/Sidebar/UserMenu.svelte`
 
 **Interfaces:**
+
 - Consumes: Task 7 client/types；Open WebUI `user`、`mobile`、`showSidebar` stores。
 - Produces: `/mailuo` 可人工操作页面和用户菜单“脉络”入口。
 
@@ -490,6 +506,7 @@ git commit -m "feat: add Mailuo search page"
 ### Task 9: 构建镜像、调整部署并完成自动化冒烟
 
 **Files:**
+
 - Modify if required: `.github/workflows/docker.yaml`
 - Modify in deployment repo: `/Users/handy/Documents/projects/doco-cd-macos/stacks/open-webui/compose.yml`
 - Remove after custom image cutover: `/Users/handy/Documents/projects/doco-cd-macos/stacks/open-webui/Dockerfile`
@@ -497,6 +514,7 @@ git commit -m "feat: add Mailuo search page"
 - Create: `docs/mailuo-search-acceptance.md`
 
 **Interfaces:**
+
 - Produces: 可部署的 `ghcr.io/dfface/open-webui:v0.11.1-mailuo.1-slim` 或同 commit SHA 镜像；人工验收清单。
 - Consumes: 通过全部验证的 Open WebUI branch 和已迁移 Mailuo 数据库。
 
@@ -561,9 +579,11 @@ services:
 ### Task 10: 完成前复核和人工验收交接
 
 **Files:**
+
 - Review all files changed since `05b291270`。
 
 **Interfaces:**
+
 - Produces: 一份包含证据、已知限制、部署入口和逐项验收动作的交接。
 
 - [ ] **Step 1: 按 spec 逐条核对覆盖率**

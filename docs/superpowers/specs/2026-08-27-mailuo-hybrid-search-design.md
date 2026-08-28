@@ -35,18 +35,18 @@
 
 统一写入契约至少包含：
 
-| 字段 | 语义 |
-| --- | --- |
-| `source` | 稳定的数据源标识，例如 `memos` |
-| `source_object_id` | 该 source 内稳定的原始对象 ID |
-| `chunk_no` | 同一对象内从 0 开始的 chunk 序号 |
-| `title` | 对象标题；没有自然标题时由采集流程生成可读标题 |
-| `content` | 当前 chunk 的可检索正文，不重复拼接标题 |
-| `source_url` | 可直接打开原对象的绝对地址，评论应包含 `commentId` 等定位参数 |
-| `source_updated_at` | 原对象最后更新时间，用于增量同步和结果展示 |
-| `content_hash` | 判断内容是否变化的开放长度哈希或版本标识 |
-| `metadata` | JSONB 扩展字段，用于保存作者、项目、状态等非通用信息 |
-| `embedding` | 与 Open WebUI 配置使用相同模型生成的 pgvector 向量 |
+| 字段                | 语义                                                          |
+| ------------------- | ------------------------------------------------------------- |
+| `source`            | 稳定的数据源标识，例如 `memos`                                |
+| `source_object_id`  | 该 source 内稳定的原始对象 ID                                 |
+| `chunk_no`          | 同一对象内从 0 开始的 chunk 序号                              |
+| `title`             | 对象标题；没有自然标题时由采集流程生成可读标题                |
+| `content`           | 当前 chunk 的可检索正文，不重复拼接标题                       |
+| `source_url`        | 可直接打开原对象的绝对地址，评论应包含 `commentId` 等定位参数 |
+| `source_updated_at` | 原对象最后更新时间，用于增量同步和结果展示                    |
+| `content_hash`      | 判断内容是否变化的开放长度哈希或版本标识                      |
+| `metadata`          | JSONB 扩展字段，用于保存作者、项目、状态等非通用信息          |
+| `embedding`         | 与 Open WebUI 配置使用相同模型生成的 pgvector 向量            |
 
 数据库使用 `(source, source_object_id, chunk_no)` 作为 chunk 的业务唯一键。采集流程负责把不同系统映射到这些通用字段：例如 Outline 评论的深链接规则属于 n8n 连接器，不属于搜索页面。
 
@@ -166,11 +166,11 @@ POST /api/v1/mailuo/search
 
 ```json
 {
-  "query": "统一搜索",
-  "mode": "hybrid",
-  "knowledge_ids": ["knowledge-id"],
-  "sources": ["outline", "memos"],
-  "limit": 20
+	"query": "统一搜索",
+	"mode": "hybrid",
+	"knowledge_ids": ["knowledge-id"],
+	"sources": ["outline", "memos"],
+	"limit": 20
 }
 ```
 
@@ -178,23 +178,21 @@ POST /api/v1/mailuo/search
 
 ```json
 {
-  "requested_mode": "hybrid",
-  "executed_mode": "hybrid",
-  "degraded": false,
-  "warnings": [],
-  "results": [
-    {
-      "source": "outline",
-      "source_object_id": "object-id",
-      "title": "统一搜索设计",
-      "source_url": "https://example.com/doc/id",
-      "source_updated_at": "2026-08-27T00:00:00Z",
-      "matched_by": ["fulltext", "semantic"],
-      "matches": [
-        {"chunk_no": 2, "content": "匹配片段……"}
-      ]
-    }
-  ]
+	"requested_mode": "hybrid",
+	"executed_mode": "hybrid",
+	"degraded": false,
+	"warnings": [],
+	"results": [
+		{
+			"source": "outline",
+			"source_object_id": "object-id",
+			"title": "统一搜索设计",
+			"source_url": "https://example.com/doc/id",
+			"source_updated_at": "2026-08-27T00:00:00Z",
+			"matched_by": ["fulltext", "semantic"],
+			"matches": [{ "chunk_no": 2, "content": "匹配片段……" }]
+		}
+	]
 }
 ```
 
