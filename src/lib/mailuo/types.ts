@@ -42,6 +42,12 @@ export type MailuoSearchRequest = {
 
 export type MailuoAnswerRequest = Omit<MailuoSearchRequest, 'limit'> & {
 	model: string;
+	history?: MailuoConversationMessage[];
+};
+
+export type MailuoConversationMessage = {
+	role: 'user' | 'assistant';
+	content: string;
 };
 
 export type MailuoSearchResponse = {
@@ -50,6 +56,13 @@ export type MailuoSearchResponse = {
 	degraded: boolean;
 	warnings: string[];
 	results: MailuoObjectResult[];
+};
+
+export type MailuoAnswerTurn = {
+	question: string;
+	content: string;
+	results: MailuoObjectResult[];
+	mode: MailuoSearchMode;
 };
 
 export type MailuoFacetResponse = {

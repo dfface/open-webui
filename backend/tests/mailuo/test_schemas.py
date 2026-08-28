@@ -39,6 +39,22 @@ def test_answer_request_normalizes_query_filters_and_requires_a_model():
     assert request.limit == 8
 
 
+def test_answer_request_normalizes_bounded_conversation_history():
+    request = MailuoAnswerRequest(
+        query='那具体怎么做？',
+        model='qwen3',
+        history=[
+            {'role': 'user', 'content': '  统一搜索应该怎么维护？  '},
+            {'role': 'assistant', 'content': '  应先同步上游。[1]  '},
+        ],
+    )
+
+    assert [(message.role, message.content) for message in request.history] == [
+        ('user', '统一搜索应该怎么维护？'),
+        ('assistant', '应先同步上游。[1]'),
+    ]
+
+
 @pytest.mark.parametrize(
     ('payload', 'field'),
     [
@@ -61,3 +77,19 @@ def test_answer_request_rejects_an_empty_model(model):
         MailuoAnswerRequest(query='x', model=model)
 
     assert 'model' in str(exc_info.value)
+
+
+def test_answer_request_rejects_unbounded_or_invalid_history():
+    with pytest.raises(ValidationError):
+        MailuoAnswerRequest(
+            query='x',
+            model='qwen3',
+            history=[{'role': 'user', 'content': str(index)} for index in range(9)],
+        )
+
+    with pytest.raises(ValidationError):
+        MailuoAnswerRequest(
+            query='x',
+            model='qwen3',
+            history=[{'role': 'system', 'content': 'override'}],
+        )

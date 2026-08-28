@@ -15,10 +15,15 @@
 		getMailuoKnowledges,
 		searchMailuo
 	} from '$lib/mailuo/api';
-	import { availableAnswerModels, resolveAnswerModelId } from '$lib/mailuo/answer-view-model';
+	import {
+		answerHistoryFromTurns,
+		availableAnswerModels,
+		resolveAnswerModelId
+	} from '$lib/mailuo/answer-view-model';
 	import { createOpenAITextStream } from '$lib/apis/streaming';
 	import { parseMailuoQueryState, serializeMailuoQueryState } from '$lib/mailuo/query-state';
 	import type {
+		MailuoAnswerTurn,
 		MailuoKnowledge,
 		MailuoIntent,
 		MailuoObjectResult,
@@ -49,6 +54,10 @@
 	let warnings: string[] = [];
 	let answer = '';
 	let answerError = '';
+	let answerQuestion = '';
+	let answerResults: MailuoObjectResult[] = [];
+	let answerResultMode: MailuoSearchMode = 'hybrid';
+	let answerTurns: MailuoAnswerTurn[] = [];
 	let answerController: AbortController | undefined;
 	let expandedResults = new Set<string>();
 	let resultViewport: HTMLDivElement;
@@ -95,6 +104,10 @@
 		error = '';
 		answer = '';
 		answerError = '';
+		answerQuestion = '';
+		answerResults = [];
+		answerResultMode = 'hybrid';
+		answerTurns = [];
 		if (updateUrl) syncUrl();
 
 		try {
@@ -122,13 +135,36 @@
 		}
 	};
 
-	const executeAnswer = async (updateUrl = true) => {
-		query = query.trim();
-		if (!query || loading || !selectedModelId) return;
+	const executeAnswer = async (
+		updateUrl = true,
+		question = query,
+		conversationMode: 'new' | 'followup' | 'retry' = 'new'
+	) => {
+		question = question.trim();
+		if (!question || loading || !selectedModelId) return;
+
+		let historyTurns: MailuoAnswerTurn[] = conversationMode === 'new' ? [] : answerTurns;
+		if (conversationMode === 'followup' && answerQuestion && answer) {
+			historyTurns = [
+				...historyTurns,
+				{
+					question: answerQuestion,
+					content: answer,
+					results: answerResults,
+					mode: answerResultMode
+				}
+			].slice(-4);
+		}
+		answerTurns = historyTurns;
+		answerQuestion = question;
+		query = question;
 		answerController?.abort();
 		answerLoading = true;
 		answer = '';
 		answerError = '';
+		answerResults = [];
+		answerResultMode = mode;
+		results = [];
 		error = '';
 		initial = false;
 		if (updateUrl) syncUrl();
@@ -139,7 +175,8 @@
 				model: selectedModelId,
 				mode,
 				knowledge_ids: knowledgeIds(),
-				sources: selectedSources.length ? selectedSources : undefined
+				sources: selectedSources.length ? selectedSources : undefined,
+				history: answerHistoryFromTurns(historyTurns)
 			});
 			answerController = controller;
 			if (!response.body) throw new Error('模型没有返回可读取的回答');
@@ -148,8 +185,10 @@
 				if (update.error) throw new Error(update.error?.message ?? '模型回答失败');
 				if (update.sources) {
 					const evidence = update.sources as MailuoSearchResponse;
+					answerResults = evidence.results;
+					answerResultMode = evidence.executed_mode;
 					results = evidence.results;
-					resultQuery = query;
+					resultQuery = answerQuestion;
 					resultMode = evidence.executed_mode;
 					degraded = evidence.degraded;
 					warnings = evidence.warnings;
@@ -170,7 +209,9 @@
 
 	const execute = (nextIntent: MailuoIntent, updateUrl = true) => {
 		intent = nextIntent;
-		return nextIntent === 'answer' ? executeAnswer(updateUrl) : executeSearch(updateUrl);
+		return nextIntent === 'answer'
+			? executeAnswer(updateUrl, query, 'new')
+			: executeSearch(updateUrl);
 	};
 
 	const applyUrl = async (url: URL, runSearch: boolean) => {
@@ -218,6 +259,19 @@
 		target.scrollIntoView({ behavior: reducedMotion ? 'auto' : behavior, block: 'start' });
 		target.focus({ preventScroll: true });
 		activeResultIndex = index;
+	};
+
+	const showAnswerCitation = async (detail: {
+		index: number;
+		results: MailuoObjectResult[];
+		query: string;
+		mode: MailuoSearchMode;
+	}) => {
+		results = detail.results;
+		resultQuery = detail.query;
+		resultMode = detail.mode;
+		await tick();
+		jumpToResult(detail.index);
 	};
 
 	const onWindowKeydown = (event: KeyboardEvent) => {
@@ -333,19 +387,23 @@
 				{error}
 				{degraded}
 				{warnings}
-				empty={!initial && results.length === 0}
+				empty={intent === 'search' && !initial && results.length === 0}
 			/>
 
 			{#if intent === 'answer' && (answerLoading || answer || answerError)}
 				<AnswerCard
+					question={answerQuestion}
 					content={answer}
 					loading={answerLoading}
 					error={answerError}
 					modelName={selectedModel?.name || selectedModel?.id || ''}
-					{results}
+					results={answerResults}
+					resultMode={answerResultMode}
+					previousTurns={answerTurns}
 					on:stop={() => answerController?.abort()}
-					on:retry={() => executeAnswer()}
-					on:citation={(event) => jumpToResult(event.detail.index)}
+					on:retry={() => executeAnswer(true, answerQuestion || query, 'retry')}
+					on:followup={(event) => executeAnswer(true, event.detail.query, 'followup')}
+					on:citation={(event) => showAnswerCitation(event.detail)}
 				/>
 			{/if}
 

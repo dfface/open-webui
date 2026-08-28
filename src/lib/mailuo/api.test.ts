@@ -84,7 +84,11 @@ describe('Mailuo API client', () => {
 			model: 'qwen3',
 			mode: 'hybrid',
 			knowledge_ids: ['kb-1'],
-			sources: ['outline']
+			sources: ['outline'],
+			history: [
+				{ role: 'user', content: '统一搜索怎么维护？' },
+				{ role: 'assistant', content: '先同步上游。[1]' }
+			]
 		});
 
 		expect(stream).toBe(response);
@@ -97,7 +101,11 @@ describe('Mailuo API client', () => {
 			model: 'qwen3',
 			mode: 'hybrid',
 			knowledge_ids: ['kb-1'],
-			sources: ['outline']
+			sources: ['outline'],
+			history: [
+				{ role: 'user', content: '统一搜索怎么维护？' },
+				{ role: 'assistant', content: '先同步上游。[1]' }
+			]
 		});
 	});
 

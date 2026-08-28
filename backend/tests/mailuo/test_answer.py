@@ -107,3 +107,40 @@ async def test_answer_does_not_call_model_without_evidence():
         )
 
     assert called is False
+
+
+@pytest.mark.asyncio
+async def test_follow_up_uses_recent_dialogue_for_retrieval_but_current_evidence_for_facts():
+    search = FakeSearchService([result('doc-1', '维护说明', '同步上游后再处理冲突。')])
+    generated = []
+
+    async def generate(_request, form_data, _user):
+        generated.append(form_data)
+
+        async def body():
+            yield 'data: [DONE]\n\n'
+
+        return StreamingResponse(body(), media_type='text/event-stream')
+
+    service = MailuoAnswerService(search_service=search, generate=generate)
+    await service.answer(
+        SimpleNamespace(app=SimpleNamespace(state=SimpleNamespace(MODELS={'qwen3': {}}))),
+        MailuoAnswerRequest(
+            query='那具体怎么做？',
+            model='qwen3',
+            history=[
+                {'role': 'user', 'content': 'Open WebUI 怎么同步上游？'},
+                {'role': 'assistant', 'content': '先保留低侵入改动。[1]'},
+            ],
+        ),
+        SimpleNamespace(id='user-1', role='user'),
+    )
+
+    assert 'Open WebUI 怎么同步上游？' in search.forms[0].query
+    assert search.forms[0].query.endswith('那具体怎么做？')
+    messages = generated[0]['messages']
+    assert [message['role'] for message in messages] == ['system', 'user', 'assistant', 'user']
+    assert messages[1]['content'] == 'Open WebUI 怎么同步上游？'
+    assert messages[2]['content'] == '先保留低侵入改动。[1]'
+    assert '此前对话仅用于理解指代' in messages[0]['content']
+    assert '[1] 维护说明' in messages[-1]['content']

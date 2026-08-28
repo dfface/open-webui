@@ -27,4 +27,28 @@ describe('Mailuo answer view model', () => {
 		expect(module.citationResultIndex('0', 3)).toBeNull();
 		expect(module.citationResultIndex('4', 3)).toBeNull();
 	});
+
+	test('builds bounded history from completed answer turns', async () => {
+		const module = await import('./answer-view-model').catch(() => null);
+		expect(module).not.toBeNull();
+		if (!module) return;
+
+		const turns = Array.from({ length: 5 }, (_, index) => ({
+			question: `问题 ${index + 1}`,
+			content: `回答 ${index + 1}`,
+			results: [],
+			mode: 'hybrid' as const
+		}));
+
+		expect(module.answerHistoryFromTurns(turns)).toEqual([
+			{ role: 'user', content: '问题 2' },
+			{ role: 'assistant', content: '回答 2' },
+			{ role: 'user', content: '问题 3' },
+			{ role: 'assistant', content: '回答 3' },
+			{ role: 'user', content: '问题 4' },
+			{ role: 'assistant', content: '回答 4' },
+			{ role: 'user', content: '问题 5' },
+			{ role: 'assistant', content: '回答 5' }
+		]);
+	});
 });

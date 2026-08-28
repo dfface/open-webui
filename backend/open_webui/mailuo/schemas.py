@@ -1,6 +1,6 @@
 import datetime as dt
 import enum
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -38,9 +38,23 @@ class MailuoSearchRequest(BaseModel):
         return _deduplicate(value)
 
 
+class MailuoConversationMessage(BaseModel):
+    role: Literal['user', 'assistant']
+    content: str = Field(min_length=1, max_length=4000)
+
+    @field_validator('content')
+    @classmethod
+    def normalize_content(cls, value: str) -> str:
+        value = value.strip()
+        if not value:
+            raise ValueError('content must not be empty')
+        return value
+
+
 class MailuoAnswerRequest(MailuoSearchRequest):
     model: str = Field(min_length=1, max_length=512)
     limit: int = Field(default=8, ge=1, le=12)
+    history: list[MailuoConversationMessage] = Field(default_factory=list, max_length=8)
 
     @field_validator('model')
     @classmethod

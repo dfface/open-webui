@@ -1,3 +1,5 @@
+import type { MailuoAnswerTurn, MailuoConversationMessage } from './types';
+
 export type MailuoAnswerModel = {
 	id: string;
 	name?: string;
@@ -29,3 +31,14 @@ export const citationResultIndex = (
 	const number = Number.parseInt(String(citationId).split('#', 1)[0], 10);
 	return Number.isInteger(number) && number >= 1 && number <= resultCount ? number - 1 : null;
 };
+
+export const answerHistoryFromTurns = (
+	turns: MailuoAnswerTurn[],
+	maxMessages = 8
+): MailuoConversationMessage[] =>
+	turns
+		.flatMap<MailuoConversationMessage>((turn) => [
+			{ role: 'user', content: turn.question },
+			{ role: 'assistant', content: turn.content }
+		])
+		.slice(-maxMessages);
