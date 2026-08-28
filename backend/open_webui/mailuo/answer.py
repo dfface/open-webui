@@ -44,12 +44,28 @@ def _evidence_messages(
     evidence = []
     remaining = max_chars
     for index, result in enumerate(response.results, start=1):
+        metadata = json.dumps(
+            result.metadata,
+            ensure_ascii=False,
+            sort_keys=True,
+            default=str,
+            separators=(',', ': '),
+        )
+        if len(metadata) > 2000:
+            metadata = f'{metadata[:1999]}…'
         snippets = '\n\n'.join(
             f'(chunk {snippet.chunk_no}) {snippet.content.strip()}'
             for snippet in sorted(result.matches, key=lambda item: item.chunk_no)
             if snippet.content.strip()
         )
-        block = f'[{index}] {result.title}\n来源：{result.source}\n{snippets}'.strip()
+        header = [
+            f'[{index}] {result.title}',
+            f'来源：{result.source}',
+            f'更新时间：{result.source_updated_at.isoformat()}',
+        ]
+        if result.metadata:
+            header.append(f'元数据：{metadata}')
+        block = '\n'.join([*header, snippets]).strip()
         if len(block) > remaining:
             block = block[:remaining].rstrip()
         if block:
