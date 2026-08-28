@@ -2,7 +2,12 @@ import datetime as dt
 from types import SimpleNamespace
 
 import pytest
-from open_webui.mailuo.errors import MailuoDatabaseError, MailuoEmbeddingError, MailuoSearchError
+from open_webui.mailuo.errors import (
+    MailuoDatabaseError,
+    MailuoEmbeddingError,
+    MailuoForbiddenError,
+    MailuoSearchError,
+)
 from open_webui.mailuo.knowledge import ResolvedKnowledge
 from open_webui.mailuo.schemas import MailuoChunkMatch, MailuoSearchRequest, SearchMode, SourceFacet
 from open_webui.mailuo.service import MailuoSearchService
@@ -79,6 +84,24 @@ async def test_keyword_search_bypasses_embedding():
     assert embedding_calls == 0
     assert gateway.calls[0][1] is None
     assert response.executed_mode == SearchMode.KEYWORD
+
+
+@pytest.mark.asyncio
+async def test_search_and_facets_require_at_least_one_accessible_knowledge():
+    service = MailuoSearchService(
+        resolve=lambda *_args, **_kwargs: async_value([]),
+        gateway_factory=lambda _knowledge: pytest.fail('gateway should not be created'),
+    )
+
+    with pytest.raises(MailuoForbiddenError):
+        await service.search(
+            SimpleNamespace(),
+            MailuoSearchRequest(query='private'),
+            SimpleNamespace(id='user-1'),
+        )
+
+    with pytest.raises(MailuoForbiddenError):
+        await service.facets(None, SimpleNamespace(id='user-1'))
 
 
 @pytest.mark.asyncio

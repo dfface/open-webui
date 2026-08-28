@@ -113,7 +113,7 @@ async def test_router_maps_forbidden_and_database_errors_without_leaking_details
         await module.search_mailuo(request, form, user=user, db=None)
     forbidden = forbidden_info.value
     assert forbidden.status_code == 403
-    assert forbidden.detail['message'] == 'Knowledge is not accessible'
+    assert forbidden.detail['message'] == '你没有可访问的脉络知识库'
     assert forbidden.detail['request_id'] == 'request-1'
     assert 'private grant detail' not in str(forbidden.detail)
 

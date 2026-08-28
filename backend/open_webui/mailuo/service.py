@@ -4,7 +4,7 @@ import time
 from collections.abc import Callable
 
 from open_webui.mailuo.embedding import generate_query_embedding
-from open_webui.mailuo.errors import MailuoEmbeddingError, MailuoSearchError
+from open_webui.mailuo.errors import MailuoEmbeddingError, MailuoForbiddenError, MailuoSearchError
 from open_webui.mailuo.knowledge import resolve_mailuo_knowledges
 from open_webui.mailuo.postgres import MailuoPostgresGateway
 from open_webui.mailuo.ranking import aggregate_chunk_matches
@@ -41,7 +41,7 @@ class MailuoSearchService:
         started_at = time.monotonic()
         knowledges = await self._resolve(form.knowledge_ids, user, db=db)
         if not knowledges:
-            raise MailuoSearchError('No accessible Mailuo knowledge')
+            raise MailuoForbiddenError('No accessible Mailuo knowledge')
 
         executed_mode = form.mode
         degraded = False
@@ -116,7 +116,7 @@ class MailuoSearchService:
     async def facets(self, knowledge_ids: list[str] | None, user, db=None) -> MailuoFacetResponse:
         knowledges = await self._resolve(knowledge_ids, user, db=db)
         if not knowledges:
-            return MailuoFacetResponse()
+            raise MailuoForbiddenError('No accessible Mailuo knowledge')
 
         gateways = [self._gateway_factory(knowledge) for knowledge in knowledges]
         outcomes = await asyncio.gather(*(gateway.facets() for gateway in gateways), return_exceptions=True)

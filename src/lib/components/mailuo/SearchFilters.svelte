@@ -68,7 +68,7 @@
 
 	<div class="flex items-center gap-3">
 		<label class="w-56 max-w-[55%] shrink-0">
-			<span class="sr-only">知识库</span>
+			<span class="sr-only">脉络知识库</span>
 			<select
 				bind:value={selectedKnowledgeId}
 				class="min-h-[44px] w-full cursor-pointer rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-800 outline-none transition-colors hover:border-gray-300 focus:border-gray-400 focus:ring-2 focus:ring-gray-200 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:border-gray-600 dark:focus:ring-gray-800"

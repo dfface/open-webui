@@ -51,6 +51,7 @@
 	let searchLoading = false;
 	let answerLoading = false;
 	let initial = true;
+	let accessDenied = false;
 	let error = '';
 	let degraded = false;
 	let warnings: string[] = [];
@@ -322,6 +323,12 @@
 		window.addEventListener('keydown', onWindowKeydown);
 		try {
 			knowledges = await getMailuoKnowledges(localStorage.token);
+			if (knowledges.length === 0) {
+				accessDenied = true;
+				error = '你没有可访问的脉络知识库，请联系管理员授权。';
+				initial = false;
+				return;
+			}
 			await applyUrl(new URL(window.location.href), true);
 		} catch (loadError) {
 			error = loadError instanceof Error ? loadError.message : '无法加载脉络知识库';
@@ -379,13 +386,15 @@
 			{loading}
 			on:submit={(event) => execute(event.detail.intent)}
 		/>
-		<SearchFilters
-			{knowledges}
-			{facets}
-			bind:selectedKnowledgeId
-			bind:selectedSources
-			on:knowledgeChange={loadFacets}
-		/>
+		{#if !accessDenied}
+			<SearchFilters
+				{knowledges}
+				{facets}
+				bind:selectedKnowledgeId
+				bind:selectedSources
+				on:knowledgeChange={loadFacets}
+			/>
+		{/if}
 
 		<section class="mt-6" aria-label="搜索结果" aria-busy={loading}>
 			<SearchStates

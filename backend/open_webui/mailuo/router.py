@@ -45,7 +45,7 @@ def _http_error(request: Request, exc: Exception) -> HTTPException:
     if isinstance(exc, MailuoForbiddenError):
         return HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail={'message': 'Knowledge is not accessible', 'request_id': request_id},
+            detail={'message': '你没有可访问的脉络知识库', 'request_id': request_id},
         )
     if isinstance(exc, MailuoConfigurationError):
         return HTTPException(
