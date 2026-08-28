@@ -1,3 +1,4 @@
+# Disabled in the Mailuo fork: mailuo-image.yml publishes the only deployment image.
 name: Create and publish Docker images with specific build args
 
 on:

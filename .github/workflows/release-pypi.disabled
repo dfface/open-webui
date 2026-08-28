@@ -1,3 +1,4 @@
+# Disabled in the Mailuo fork: upstream packages must never publish from routine main pushes.
 name: Release to PyPI
 
 on:

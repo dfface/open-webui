@@ -1,3 +1,4 @@
+# Disabled in the Mailuo fork: releases are managed explicitly, not from every main push.
 # ─────────────────────────────────────────────────────────────────────────────
 # Release — Create GitHub release from CHANGELOG, trigger Docker builds
 # Runs on pushes to main when package.json version changes
