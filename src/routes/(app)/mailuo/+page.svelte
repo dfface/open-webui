@@ -1,9 +1,10 @@
 <script lang="ts">
-	import { onDestroy, onMount } from 'svelte';
+	import { onDestroy, onMount, tick } from 'svelte';
 	import { showSidebar } from '$lib/stores';
 
 	import SearchBar from '$lib/components/mailuo/SearchBar.svelte';
 	import SearchFilters from '$lib/components/mailuo/SearchFilters.svelte';
+	import ResultQuickNav from '$lib/components/mailuo/ResultQuickNav.svelte';
 	import SearchResult from '$lib/components/mailuo/SearchResult.svelte';
 	import SearchStates from '$lib/components/mailuo/SearchStates.svelte';
 	import { getMailuoFacets, getMailuoKnowledges, searchMailuo } from '$lib/mailuo/api';
@@ -33,6 +34,9 @@
 	let degraded = false;
 	let warnings: string[] = [];
 	let expandedResults = new Set<string>();
+	let resultViewport: HTMLDivElement;
+	let activeResultIndex = 0;
+	let scrollFrame: number | undefined;
 
 	$: sourceLabels = new Map(facets.map((facet) => [facet.source, facet.display_name]));
 
@@ -99,6 +103,41 @@
 
 	const onPopState = () => applyUrl(new URL(window.location.href), true);
 
+	const resultKey = (result: MailuoObjectResult) => `${result.source}:${result.source_object_id}`;
+
+	const resultElements = () =>
+		Array.from(resultViewport?.querySelectorAll<HTMLElement>('[data-mailuo-result-index]') ?? []);
+
+	const updateActiveResult = () => {
+		const elements = resultElements();
+		if (!resultViewport || elements.length === 0) return;
+
+		const viewportTop = resultViewport.getBoundingClientRect().top + 112;
+		let nextIndex = 0;
+		for (const [index, element] of elements.entries()) {
+			if (element.getBoundingClientRect().top <= viewportTop) nextIndex = index;
+			else break;
+		}
+		activeResultIndex = nextIndex;
+	};
+
+	const onResultsScroll = () => {
+		if (scrollFrame !== undefined) return;
+		scrollFrame = window.requestAnimationFrame(() => {
+			scrollFrame = undefined;
+			updateActiveResult();
+		});
+	};
+
+	const jumpToResult = (index: number, behavior: ScrollBehavior = 'smooth') => {
+		const target = resultElements()[index];
+		if (!target) return;
+		const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+		target.scrollIntoView({ behavior: reducedMotion ? 'auto' : behavior, block: 'start' });
+		target.focus({ preventScroll: true });
+		activeResultIndex = index;
+	};
+
 	const onWindowKeydown = (event: KeyboardEvent) => {
 		const target = event.target as HTMLElement | null;
 		const editing = target?.matches('input, textarea, [contenteditable="true"]');
@@ -107,16 +146,33 @@
 			searchBar?.focus();
 		}
 		if (event.key === 'Escape') {
+			if (expandedResults.size > 0) {
+				event.preventDefault();
+				const expandedIndex = results.findIndex(
+					(result, index) => index >= activeResultIndex && expandedResults.has(resultKey(result))
+				);
+				const fallbackIndex = results.findIndex((result) => expandedResults.has(resultKey(result)));
+				const index = expandedIndex >= 0 ? expandedIndex : fallbackIndex;
+				if (index >= 0) void toggleExpanded(results[index], index);
+				return;
+			}
 			query = '';
 			searchBar?.focus();
 		}
 	};
 
-	const toggleExpanded = (result: MailuoObjectResult) => {
-		const key = `${result.source}:${result.source_object_id}`;
+	const toggleExpanded = async (result: MailuoObjectResult, index: number) => {
+		const key = resultKey(result);
 		const next = new Set(expandedResults);
-		next.has(key) ? next.delete(key) : next.add(key);
+		if (next.has(key)) {
+			jumpToResult(index, 'auto');
+			next.delete(key);
+		} else {
+			next.add(key);
+		}
 		expandedResults = next;
+		await tick();
+		updateActiveResult();
 	};
 
 	onMount(async () => {
@@ -134,6 +190,7 @@
 	onDestroy(() => {
 		window.removeEventListener('popstate', onPopState);
 		window.removeEventListener('keydown', onWindowKeydown);
+		if (scrollFrame !== undefined) window.cancelAnimationFrame(scrollFrame);
 	});
 </script>
 
@@ -142,6 +199,8 @@
 </svelte:head>
 
 <div
+	bind:this={resultViewport}
+	on:scroll={onResultsScroll}
 	class="h-full w-full min-w-0 max-w-full overflow-y-auto {$showSidebar
 		? 'md:max-w-[calc(100%-var(--sidebar-width))]'
 		: ''}"
@@ -208,21 +267,32 @@
 					</div>
 				</div>
 				<div
-					class="divide-y divide-gray-100 overflow-hidden rounded-2xl border border-gray-200 bg-white transition-opacity duration-200 motion-reduce:transition-none dark:divide-gray-800 dark:border-gray-800 dark:bg-gray-900 {loading
+					class="divide-y divide-gray-100 rounded-2xl border border-gray-200 bg-white transition-opacity duration-200 motion-reduce:transition-none dark:divide-gray-800 dark:border-gray-800 dark:bg-gray-900 {loading
 						? 'opacity-60'
 						: ''}"
 				>
-					{#each results as result (result.source + ':' + result.source_object_id)}
-						<SearchResult
-							{result}
-							query={resultQuery}
-							mode={resultMode}
-							sourceName={sourceLabel(result.source, sourceLabels)}
-							expanded={expandedResults.has(`${result.source}:${result.source_object_id}`)}
-							on:toggle={() => toggleExpanded(result)}
-						/>
+					{#each results as result, index (result.source + ':' + result.source_object_id)}
+						<div
+							data-mailuo-result-index={index}
+							tabindex="-1"
+							class="scroll-mt-4 rounded-[inherit] outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-gray-500"
+						>
+							<SearchResult
+								{result}
+								query={resultQuery}
+								mode={resultMode}
+								sourceName={sourceLabel(result.source, sourceLabels)}
+								expanded={expandedResults.has(resultKey(result))}
+								on:toggle={() => toggleExpanded(result, index)}
+							/>
+						</div>
 					{/each}
 				</div>
+				<ResultQuickNav
+					{results}
+					activeIndex={activeResultIndex}
+					on:select={(event) => jumpToResult(event.detail.index)}
+				/>
 			{/if}
 		</section>
 	</main>

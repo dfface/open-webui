@@ -14,6 +14,7 @@
 
 	$: sourceUrl = safeSourceUrl(result.source_url);
 	$: matches = visibleMatches(result, expanded, query, mode);
+	$: expandable = result.matches.length > 1 || result.matches[0]?.content.length > 360;
 
 	const formatDate = (value: string) => {
 		const date = new Date(value);
@@ -35,7 +36,11 @@
 </script>
 
 <article class="group p-4 transition-colors hover:bg-gray-50/70 dark:hover:bg-gray-800/30 sm:p-5">
-	<div class="flex items-start gap-3">
+	<div
+		class="flex items-start gap-3 {expanded && expandable
+			? 'sticky top-3 z-10 -mx-2 -mt-2 rounded-xl border border-gray-200/80 bg-white/95 px-2 py-2 shadow-sm backdrop-blur dark:border-gray-700 dark:bg-gray-900/95'
+			: ''}"
+	>
 		<div class="min-w-0 flex-1">
 			<h2 class="line-clamp-2 text-base font-semibold leading-6 text-gray-900 dark:text-gray-100">
 				{#if sourceUrl}
@@ -71,28 +76,51 @@
 			</div>
 		</div>
 
-		{#if sourceUrl}
-			<a
-				href={sourceUrl}
-				target="_blank"
-				rel="noopener noreferrer"
-				class="flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-xl text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-500 focus-visible:ring-offset-2 dark:text-gray-500 dark:hover:bg-gray-800 dark:hover:text-gray-100 dark:focus-visible:ring-offset-gray-900"
-				aria-label={`打开原文：${result.title || '无标题'}`}
-				title="打开原文"
-			>
-				<svg
-					class="size-4"
-					viewBox="0 0 24 24"
-					fill="none"
-					stroke="currentColor"
-					stroke-width="1.8"
-					aria-hidden="true"
+		<div class="flex shrink-0 items-center gap-1">
+			{#if expanded && expandable}
+				<button
+					type="button"
+					class="flex min-h-[44px] cursor-pointer items-center gap-1 rounded-xl px-3 text-xs font-medium text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-500 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-white"
+					aria-label={`收起内容：${result.title || '无标题'}`}
+					on:click={() => dispatch('toggle')}
 				>
-					<path d="M15 5h4v4M14 10l5-5M19 13v5a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h5"
-					></path>
-				</svg>
-			</a>
-		{/if}
+					<svg
+						class="size-4"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="2"
+						aria-hidden="true"
+					>
+						<path d="m7 14 5-5 5 5"></path>
+					</svg>
+					<span class="hidden sm:inline">收起</span>
+				</button>
+			{/if}
+
+			{#if sourceUrl}
+				<a
+					href={sourceUrl}
+					target="_blank"
+					rel="noopener noreferrer"
+					class="flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-xl text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-500 focus-visible:ring-offset-2 dark:text-gray-500 dark:hover:bg-gray-800 dark:hover:text-gray-100 dark:focus-visible:ring-offset-gray-900"
+					aria-label={`打开原文：${result.title || '无标题'}`}
+					title="打开原文"
+				>
+					<svg
+						class="size-4"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="1.8"
+						aria-hidden="true"
+					>
+						<path d="M15 5h4v4M14 10l5-5M19 13v5a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h5"
+						></path>
+					</svg>
+				</a>
+			{/if}
+		</div>
 	</div>
 
 	<div class="mt-3 max-w-3xl space-y-3">
@@ -113,7 +141,7 @@
 		{/each}
 	</div>
 
-	{#if result.matches.length > 1 || result.matches[0]?.content.length > 360}
+	{#if expandable}
 		<button
 			type="button"
 			class="mt-3 flex min-h-[44px] cursor-pointer items-center gap-1 rounded-lg pr-2 text-xs font-medium text-gray-500 transition-colors hover:text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-500 dark:text-gray-400 dark:hover:text-white"
