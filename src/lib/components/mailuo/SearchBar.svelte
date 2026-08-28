@@ -89,7 +89,7 @@
 					action.value
 						? 'bg-gray-900 text-white dark:bg-white dark:text-gray-900'
 						: 'bg-white text-gray-600 hover:bg-gray-100 hover:text-gray-900 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-white'}"
-					disabled={loading || !query.trim() || (action.value === 'answer' && !modelId)}
+					disabled={loading}
 					aria-pressed={intent === action.value}
 					on:click={() => submit(action.value as MailuoIntent)}
 				>
@@ -142,21 +142,23 @@
 				</button>
 			{/each}
 		</div>
-		<label
-			class="ml-auto flex min-h-[44px] min-w-0 items-center gap-2 text-xs text-gray-500 dark:text-gray-400"
-		>
-			<span class="hidden sm:inline">问答模型</span>
-			<select
-				bind:value={modelId}
-				class="max-w-44 cursor-pointer rounded-lg border border-gray-200 bg-white px-2 py-1.5 text-xs text-gray-700 outline-none focus:border-gray-400 focus:ring-2 focus:ring-gray-200 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:focus:ring-gray-800"
-				aria-label="问答模型"
-				disabled={answerModels.length === 0 || loading}
+		{#if intent === 'answer'}
+			<label
+				class="ml-auto flex min-h-[44px] min-w-0 items-center gap-2 text-xs text-gray-500 dark:text-gray-400"
 			>
-				{#if answerModels.length === 0}<option value="">暂无可用模型</option>{/if}
-				{#each answerModels as model}
-					<option value={model.id}>{model.name || model.id}</option>
-				{/each}
-			</select>
-		</label>
+				<span class="hidden sm:inline">问答模型</span>
+				<select
+					bind:value={modelId}
+					class="max-w-44 cursor-pointer rounded-lg border border-gray-200 bg-white px-2 py-1.5 text-xs text-gray-700 outline-none focus:border-gray-400 focus:ring-2 focus:ring-gray-200 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:focus:ring-gray-800"
+					aria-label="问答模型"
+					disabled={answerModels.length === 0 || loading}
+				>
+					{#if answerModels.length === 0}<option value="">暂无可用模型</option>{/if}
+					{#each answerModels as model}
+						<option value={model.id}>{model.name || model.id}</option>
+					{/each}
+				</select>
+			</label>
+		{/if}
 	</div>
 </form>
