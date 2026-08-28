@@ -1,16 +1,48 @@
 # ─────────────────────────────────────────────────────────────────────────────
 # Frontend CI — Lint, format check, build, and unit tests
-# Runs on pushes and PRs to main/dev, skipping backend-only changes
+# Runs on pushes and PRs to the fork's integration branch, skipping backend-only changes
 # ─────────────────────────────────────────────────────────────────────────────
 name: Frontend Build
 
 on:
   push:
-    branches: [main, dev]
-    paths-ignore: ['backend/**', 'pyproject.toml', 'uv.lock']
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'static/**'
+      - 'scripts/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'pyodide-lock.json'
+      - 'i18next-parser.config.ts'
+      - 'postcss.config.js'
+      - 'svelte.config.js'
+      - 'tailwind.config.js'
+      - 'tsconfig.json'
+      - 'vite.config.ts'
+      - '.npmrc'
+      - '.prettierignore'
+      - '.prettierrc'
+      - '.github/workflows/frontend.yaml'
   pull_request:
-    branches: [main, dev]
-    paths-ignore: ['backend/**', 'pyproject.toml', 'uv.lock']
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'static/**'
+      - 'scripts/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'pyodide-lock.json'
+      - 'i18next-parser.config.ts'
+      - 'postcss.config.js'
+      - 'svelte.config.js'
+      - 'tailwind.config.js'
+      - 'tsconfig.json'
+      - 'vite.config.ts'
+      - '.npmrc'
+      - '.prettierignore'
+      - '.prettierrc'
+      - '.github/workflows/frontend.yaml'
 
 concurrency:
   group: frontend-${{ github.ref }}
