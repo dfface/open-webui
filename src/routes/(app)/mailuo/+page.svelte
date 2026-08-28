@@ -290,6 +290,7 @@
 				</div>
 				<ResultQuickNav
 					{results}
+					{sourceLabels}
 					activeIndex={activeResultIndex}
 					on:select={(event) => jumpToResult(event.detail.index)}
 				/>
