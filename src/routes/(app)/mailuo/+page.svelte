@@ -181,7 +181,7 @@
 				mode,
 				knowledge_ids: knowledgeIds(),
 				sources: selectedSources.length ? selectedSources : undefined,
-				sort: mode === 'keyword' ? sort : 'relevance',
+				sort: 'relevance',
 				history: answerHistoryFromTurns(historyTurns)
 			});
 			answerController = controller;

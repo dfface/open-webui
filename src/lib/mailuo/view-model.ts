@@ -1,4 +1,9 @@
-import type { MailuoObjectResult, MailuoSearchMode, MailuoSnippet } from './types';
+import type {
+	MailuoObjectResult,
+	MailuoSearchMode,
+	MailuoSnippet,
+	MailuoSourceFacet
+} from './types';
 
 export type MailuoTextSegment = {
 	text: string;
@@ -98,6 +103,19 @@ export const resultsForState = (
 	next: MailuoObjectResult[],
 	loading: boolean
 ) => (loading ? current : next);
+
+export const orderedSourceFacets = (
+	facets: MailuoSourceFacet[],
+	selectedSources: string[],
+	expanded: boolean,
+	hasHiddenSources: boolean
+): MailuoSourceFacet[] => {
+	if (expanded || !hasHiddenSources) return facets;
+	return [
+		...facets.filter((facet) => selectedSources.includes(facet.source)),
+		...facets.filter((facet) => !selectedSources.includes(facet.source))
+	];
+};
 
 export const visibleMatches = (
 	result: MailuoObjectResult,

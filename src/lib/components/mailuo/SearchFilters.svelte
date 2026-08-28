@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { createEventDispatcher, onDestroy, onMount, tick } from 'svelte';
 
+	import { orderedSourceFacets } from '$lib/mailuo/view-model';
 	import type { MailuoKnowledge, MailuoSourceFacet } from '$lib/mailuo/types';
 
 	export let knowledges: MailuoKnowledge[] = [];
@@ -14,12 +15,7 @@
 	let hasHiddenSources = false;
 	let resizeObserver: ResizeObserver | undefined;
 
-	$: orderedFacets = expanded
-		? facets
-		: [
-				...facets.filter((facet) => selectedSources.includes(facet.source)),
-				...facets.filter((facet) => !selectedSources.includes(facet.source))
-			];
+	$: orderedFacets = orderedSourceFacets(facets, selectedSources, expanded, hasHiddenSources);
 	$: if (sourceList) {
 		orderedFacets;
 		expanded;
@@ -28,7 +24,12 @@
 
 	const updateOverflow = () => {
 		if (!sourceList) return;
-		hasHiddenSources = sourceList.scrollHeight > 46;
+		const items = Array.from(sourceList.children) as HTMLElement[];
+		const columnGap = Number.parseFloat(window.getComputedStyle(sourceList).columnGap) || 0;
+		const contentWidth =
+			items.reduce((width, item) => width + item.getBoundingClientRect().width, 0) +
+			Math.max(0, items.length - 1) * columnGap;
+		hasHiddenSources = contentWidth > sourceList.clientWidth + 1;
 		if (!hasHiddenSources) expanded = false;
 	};
 

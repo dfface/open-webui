@@ -72,7 +72,12 @@ async def test_answer_stream_uses_selected_model_and_emits_evidence_before_model
     service = MailuoAnswerService(search_service=search, generate=generate)
     response = await service.answer(
         SimpleNamespace(app=SimpleNamespace(state=SimpleNamespace(MODELS={'qwen3': {}}))),
-        MailuoAnswerRequest(query='怎么维护？', model='qwen3', mode='hybrid'),
+        MailuoAnswerRequest(
+            query='怎么维护？',
+            model='qwen3',
+            mode='keyword',
+            sort='updated_desc',
+        ),
         SimpleNamespace(id='user-1', role='user'),
     )
     stream = await collect(response)
@@ -81,6 +86,7 @@ async def test_answer_stream_uses_selected_model_and_emits_evidence_before_model
     assert first_event['sources']['results'][0]['source_object_id'] == 'doc-1'
     assert stream.index('"sources"') < stream.index('答案 [1]')
     assert search.forms[0].limit == 8
+    assert search.forms[0].sort == 'relevance'
     assert generated[0]['model'] == 'qwen3'
     assert generated[0]['stream'] is True
     assert '[1] 架构设计' in generated[0]['messages'][1]['content']

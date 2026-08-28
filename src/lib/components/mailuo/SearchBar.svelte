@@ -127,7 +127,7 @@
 				</button>
 			{/each}
 		</div>
-		{#if mode === 'keyword'}
+		{#if mode === 'keyword' && intent === 'search'}
 			<label class="flex min-h-[44px] items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
 				<span>排序</span>
 				<span class="relative inline-flex">

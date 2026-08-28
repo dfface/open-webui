@@ -3,6 +3,7 @@ import { describe, expect, test } from 'vitest';
 import {
 	excerptAroundQuery,
 	highlightMailuoText,
+	orderedSourceFacets,
 	resultsForState,
 	safeSourceUrl,
 	sourceLabel,
@@ -35,6 +36,20 @@ describe('Mailuo result view model', () => {
 	test('shows one snippet by default and no more than three when expanded', () => {
 		expect(visibleMatches(result, false)).toEqual([result.matches[0]]);
 		expect(visibleMatches(result, true)).toEqual(result.matches);
+	});
+
+	test('only moves selected sources forward when an overflowing source row is collapsed', () => {
+		const facets = [
+			{ source: 'kaneo', display_name: 'Kaneo', object_count: 1 },
+			{ source: 'memos', display_name: 'Memos', object_count: 1 },
+			{ source: 'outline', display_name: 'Outline', object_count: 1 }
+		];
+
+		expect(orderedSourceFacets(facets, ['outline'], false, false)).toBe(facets);
+		expect(orderedSourceFacets(facets, ['outline'], true, true)).toBe(facets);
+		expect(
+			orderedSourceFacets(facets, ['outline'], false, true).map((facet) => facet.source)
+		).toEqual(['outline', 'kaneo', 'memos']);
 	});
 
 	test('puts the literal keyword match first and excerpts around the evidence', () => {

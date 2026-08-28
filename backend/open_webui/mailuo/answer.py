@@ -4,7 +4,12 @@ from collections.abc import Callable
 from fastapi.responses import StreamingResponse
 
 from open_webui.mailuo.errors import MailuoSearchError
-from open_webui.mailuo.schemas import MailuoAnswerRequest, MailuoSearchRequest, MailuoSearchResponse
+from open_webui.mailuo.schemas import (
+    MailuoAnswerRequest,
+    MailuoSearchRequest,
+    MailuoSearchResponse,
+    SearchSort,
+)
 from open_webui.mailuo.service import MailuoSearchService
 
 SYSTEM_PROMPT = """你是“脉络”知识问答助手。请严格遵守以下规则：
@@ -105,7 +110,7 @@ class MailuoAnswerService:
                 knowledge_ids=form.knowledge_ids,
                 sources=form.sources,
                 limit=form.limit,
-                sort=form.sort,
+                sort=SearchSort.RELEVANCE,
             ),
             user,
             db=db,
