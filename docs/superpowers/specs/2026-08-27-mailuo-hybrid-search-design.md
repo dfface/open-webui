@@ -50,7 +50,7 @@
 
 数据库使用 `(source, source_object_id, chunk_no)` 作为 chunk 的业务唯一键。采集流程负责把不同系统映射到这些通用字段：例如 Outline 评论的深链接规则属于 n8n 连接器，不属于搜索页面。
 
-搜索页面通过数据库动态发现当前存在的 source，前端不维护 source 列表。未知 source 使用通用 badge，显示原始 `source` 名称，仍能正常搜索和打开原文。可选的 `public.mailuo_sources` 配置表只负责显示名称、排序和颜色；未登记的 source 自动回退到默认显示，因此登记不是接入前置条件。
+搜索页面直接从当前可访问的 `chunks` 数据动态聚合 source，前端不维护 source 列表。未知 source 使用通用 badge，显示原始 `source` 名称，仍能正常搜索和打开原文；不存在额外的来源注册表或接入前置配置。
 
 ## 5. 总体架构
 
@@ -100,19 +100,7 @@ Open WebUI fork
 - 非空值使用 `source = ANY(source_filter)` 过滤。
 - 函数不校验固定枚举，也不按 source 分支。
 
-source 列表从当前可访问的数据集动态聚合。可选配置表结构为：
-
-```sql
-CREATE TABLE public.mailuo_sources (
-  source varchar(64) PRIMARY KEY,
-  display_name text,
-  color text,
-  sort_order integer NOT NULL DEFAULT 0,
-  metadata jsonb NOT NULL DEFAULT '{}'::jsonb
-);
-```
-
-查询时以实际存在的 `chunks.source` 为主，左连接该表补充展示信息。没有配置行的 source 仍会返回。
+source 列表由 Open WebUI 使用普通只读聚合 SQL 从当前可访问的 `chunks.source` 获取，并按 `source_object_id` 统计对象数。这里不建立配置表或包装函数；source 的原始值就是跨采集、检索和展示层的稳定标识。
 
 ### 6.4 数据库检索函数
 

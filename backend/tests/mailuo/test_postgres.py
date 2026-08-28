@@ -83,7 +83,7 @@ async def test_search_calls_fixed_database_function_with_vector_parameter():
 
 
 @pytest.mark.asyncio
-async def test_facets_uses_fixed_function_and_keeps_unknown_source():
+async def test_facets_queries_chunks_directly_and_keeps_unknown_source():
     cursor = FakeCursor(
         [
             {
@@ -103,7 +103,10 @@ async def test_facets_uses_fixed_function_and_keeps_unknown_source():
 
     facets = await gateway.facets()
 
-    assert str(cursor.calls[0][0]) == 'SELECT * FROM public.mailuo_source_facets()'
+    query = str(cursor.calls[0][0])
+    assert 'FROM public.chunks' in query
+    assert 'count(DISTINCT source_object_id)' in query
+    assert 'mailuo_source_facets' not in query
     assert cursor.calls[0][1] is None
     assert facets[0].source == 'future_source'
 

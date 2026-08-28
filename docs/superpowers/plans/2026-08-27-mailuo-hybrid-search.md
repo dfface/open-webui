@@ -1,5 +1,8 @@
 # 脉络混合搜索实施计划
 
+> 后续简化：来源列表已经改为直接聚合 `public.chunks`；计划中创建
+> `mailuo_sources` 和 `mailuo_source_facets()` 的历史步骤不再代表当前实现。
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** 在 Open WebUI v0.11.1 fork 中交付可独立使用的“脉络”页面，对 Mailuo `public.chunks` 提供关键词、语义和 RRF 混合搜索，并可点击返回原文。
@@ -84,14 +87,14 @@ git commit -m "fix: adapt external pgvector query vectors"
 
 **Files:**
 
-- Create in Mailuo repo: `/Users/handy/Documents/projects/mailuo/migrations/0002_public_chunks_hybrid_search.sql`
+- Create in Mailuo repo: `/Users/handy/Documents/projects/mailuo/migrations/0001_public_chunks_hybrid_search.sql`
 - Create in Mailuo repo: `/Users/handy/Documents/projects/mailuo/tests/sql/public_chunks_hybrid_search.sql`
 - Modify in Mailuo repo: `/Users/handy/Documents/projects/mailuo/migrations/README.md`
 
 **Interfaces:**
 
 - Consumes: `public.chunks(source, source_object_id, chunk_no, title, content, source_url, source_updated_at, metadata, embedding)`。
-- Produces: `public.mailuo_hybrid_search(text, vector, text, text[], integer, integer)` 和 `public.mailuo_source_facets()`。
+- Produces: `public.mailuo_hybrid_search(text, vector, text, text[], integer, integer)`。
 
 - [ ] **Step 1: 先写数据库行为测试**
 
@@ -102,7 +105,7 @@ git commit -m "fix: adapt external pgvector query vectors"
 -- semantic 不返回纯关键词 fixture
 -- hybrid 的 matched_by 能同时包含 lexical/semantic 通道
 -- source_filter 只返回指定 source
--- facets 自动返回 test_future_source
+-- 从 chunks 直接聚合时能发现 test_future_source
 -- 函数结果保留 source_url 和 source_updated_at
 ```
 
@@ -121,12 +124,10 @@ Expected: FAIL，提示 `public.mailuo_hybrid_search` 不存在。
 1. `CREATE EXTENSION IF NOT EXISTS pg_trgm/vector`；
 2. 增加生成列 `search_tsv`，title 权重 A、content 权重 B；
 3. 为 `search_tsv`、title/content trigram 建索引；
-4. 建可选 `public.mailuo_sources` 展示配置表，不含 source 枚举；
-5. 建 `public.mailuo_source_facets()`，以实际 chunks source 为主、左连接展示配置；
-6. 建 `public.mailuo_hybrid_search()`，参数绑定，模式只允许 `hybrid/keyword/semantic`；
-7. FTS、trigram、vector 分别先过滤 source 再取 Top 50；
-8. 使用 `1.0 / (60 + rank)` 融合，并返回 `matched_by text[]`；
-9. 返回 chunk 级字段，不在数据库累加同对象得分。
+4. 建 `public.mailuo_hybrid_search()`，参数绑定，模式只允许 `hybrid/keyword/semantic`；
+5. FTS、trigram、vector 分别先过滤 source 再取 Top 50；
+6. 使用 `1.0 / (60 + rank)` 融合，并返回 `matched_by text[]`；
+7. 返回 chunk 级字段，不在数据库累加同对象得分。
 
 函数返回类型固定为：
 
@@ -248,7 +249,7 @@ assert sql_text.startswith('SELECT * FROM public.mailuo_hybrid_search(')
 assert params == (query, Vector(query_embedding), mode, sources, 150, 60)
 ```
 
-并验证 facets 只调用固定 `public.mailuo_source_facets()`，异常信息经 `MailuoDatabaseError` 脱敏。
+并验证 facets 使用固定只读 SQL 从 `public.chunks` 聚合，异常信息经 `MailuoDatabaseError` 脱敏。
 
 - [ ] **Step 3: 运行测试确认 RED**
 
