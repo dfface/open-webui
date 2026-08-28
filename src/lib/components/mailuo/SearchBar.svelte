@@ -130,10 +130,10 @@
 		{#if mode === 'keyword' && intent === 'search'}
 			<label class="flex min-h-[44px] items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
 				<span>排序</span>
-				<span class="relative inline-flex">
+				<span class="inline-flex">
 					<select
 						bind:value={sort}
-						class="h-9 cursor-pointer appearance-none rounded-lg border border-gray-200 bg-white py-1.5 pl-2.5 pr-8 text-xs text-gray-700 outline-none focus:border-gray-400 focus:ring-2 focus:ring-gray-200 disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:focus:ring-gray-800"
+						class="h-9 cursor-pointer appearance-none rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs text-gray-700 outline-none focus:border-gray-400 focus:ring-2 focus:ring-gray-200 disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:focus:ring-gray-800"
 						aria-label="关键词结果排序"
 						disabled={loading}
 					>
@@ -141,16 +141,6 @@
 						<option value="updated_desc">最近更新</option>
 						<option value="updated_asc">最早更新</option>
 					</select>
-					<svg
-						class="pointer-events-none absolute right-2.5 top-1/2 size-3.5 -translate-y-1/2 text-gray-400"
-						viewBox="0 0 24 24"
-						fill="none"
-						stroke="currentColor"
-						stroke-width="2"
-						aria-hidden="true"
-					>
-						<path d="m7 10 5 5 5-5"></path>
-					</svg>
 				</span>
 			</label>
 		{/if}
